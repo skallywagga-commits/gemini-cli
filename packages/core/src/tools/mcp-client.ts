@@ -24,6 +24,7 @@ import { parse } from 'shell-quote';
 import type { Config, MCPServerConfig } from '../config/config.js';
 import { AuthProviderType } from '../config/config.js';
 import { GoogleCredentialProvider } from '../mcp/google-auth-provider.js';
+import { GoogleIAPProvider } from '../mcp/iap-provider.js';
 import { DiscoveredMCPTool } from './mcp-tool.js';
 
 import type { FunctionDeclaration } from '@google/genai';
@@ -440,6 +441,7 @@ async function createTransportWithOAuth(
  * @param toolRegistry The central registry where discovered tools will be registered.
  * @returns A promise that resolves when the discovery process has been attempted for all servers.
  */
+// THIS IS NOT CALLED ANYWHERE
 export async function discoverMcpTools(
   mcpServers: Record<string, MCPServerConfig>,
   mcpServerCommand: string | undefined,
@@ -1239,6 +1241,27 @@ export async function createTransport(
   mcpServerConfig: MCPServerConfig,
   debugMode: boolean,
 ): Promise<Transport> {
+  if (mcpServerConfig.authProviderType === 'iap') {
+    const provider = new GoogleIAPProvider(mcpServerConfig);
+    const transportOptions: SSEClientTransportOptions = {
+      authProvider: provider,
+    };
+
+    const targetUrl = mcpServerConfig.httpUrl || mcpServerConfig.url;
+    if (!targetUrl) {
+      throw new Error('No url or httpUrl found in IAP server config');
+    }
+
+    if (mcpServerConfig.httpUrl) {
+      return new StreamableHTTPClientTransport(
+        new URL(targetUrl),
+        transportOptions,
+      );
+    }
+    // Default to SSE if only url is provided
+    return new SSEClientTransport(new URL(targetUrl), transportOptions);
+  }
+
   if (
     mcpServerConfig.authProviderType === AuthProviderType.GOOGLE_CREDENTIALS
   ) {
@@ -1259,7 +1282,9 @@ export async function createTransport(
         transportOptions,
       );
     }
-    throw new Error('No URL configured for Google Credentials MCP server');
+    throw new Error(
+      'No URL configured for Google Credentials or IAP MCP server',
+    );
   }
 
   // Check if we have OAuth configuration or stored tokens

@@ -265,6 +265,7 @@ export class ToolRegistry {
    * Discover or re-discover tools for a single MCP server.
    * @param serverName - The name of the server to discover tools from.
    */
+  // THIS IS NOT CALLED ANYWHERE
   async discoverToolsForServer(serverName: string): Promise<void> {
     // Remove any previously discovered tools from this server
     for (const [name, tool] of this.tools.entries()) {
