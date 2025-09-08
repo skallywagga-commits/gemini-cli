@@ -296,6 +296,17 @@ export function annotateActiveExtensions(
 ): GeminiCLIExtension[] {
   const settings = loadSettings(workspaceDir).merged;
   const disabledExtensions = settings.extensions?.disabled ?? [];
+  const autoUpdateSettings = settings.extensions?.autoUpdate;
+
+  const getAutoUpdateValue = (extensionName: string): boolean => {
+    if (typeof autoUpdateSettings === 'boolean') {
+      return autoUpdateSettings;
+    }
+    if (typeof autoUpdateSettings === 'object' && autoUpdateSettings !== null) {
+      return autoUpdateSettings[extensionName] ?? true;
+    }
+    return false;
+  };
 
   const annotatedExtensions: GeminiCLIExtension[] = [];
 
@@ -308,6 +319,7 @@ export function annotateActiveExtensions(
       source: extension.installMetadata?.source,
       type: extension.installMetadata?.type,
       ref: extension.installMetadata?.ref,
+      autoUpdate: getAutoUpdateValue(extension.config.name),
     }));
   }
 
@@ -327,6 +339,7 @@ export function annotateActiveExtensions(
       source: extension.installMetadata?.source,
       type: extension.installMetadata?.type,
       ref: extension.installMetadata?.ref,
+      autoUpdate: getAutoUpdateValue(extension.config.name),
     }));
   }
 
@@ -345,6 +358,7 @@ export function annotateActiveExtensions(
       version: extension.config.version,
       isActive,
       path: extension.path,
+      autoUpdate: getAutoUpdateValue(extension.config.name),
     });
   }
 
