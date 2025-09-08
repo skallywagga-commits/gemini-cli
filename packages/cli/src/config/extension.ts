@@ -303,7 +303,7 @@ export function annotateActiveExtensions(
       return autoUpdateSettings;
     }
     if (typeof autoUpdateSettings === 'object' && autoUpdateSettings !== null) {
-      return autoUpdateSettings[extensionName] ?? true;
+      return autoUpdateSettings[extensionName] ?? false;
     }
     return false;
   };

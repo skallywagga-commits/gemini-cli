@@ -443,6 +443,88 @@ describe('annotateActiveExtensions', () => {
     expect(consoleSpy).toHaveBeenCalledWith('Extension not found: ext4');
     consoleSpy.mockRestore();
   });
+
+  describe('autoUpdate', () => {
+    let tempHomeDir: string;
+
+    beforeEach(() => {
+      tempHomeDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'gemini-cli-test-home-'),
+      );
+      vi.mocked(os.homedir).mockReturnValue(tempHomeDir);
+    });
+
+    afterEach(() => {
+      fs.rmSync(tempHomeDir, { recursive: true, force: true });
+    });
+
+    it('should be false if autoUpdate is not set', () => {
+      const activeExtensions = annotateActiveExtensions(
+        extensions,
+        [],
+        tempHomeDir,
+      );
+      expect(activeExtensions.every((e) => e.autoUpdate)).toBe(false);
+    });
+
+    it('should be true for all extensions if autoUpdate is true', () => {
+      const settingsDir = path.join(tempHomeDir, GEMINI_DIR);
+      fs.mkdirSync(settingsDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(settingsDir, 'settings.json'),
+        JSON.stringify({ extensions: { autoUpdate: true } }),
+      );
+
+      const activeExtensions = annotateActiveExtensions(
+        extensions,
+        [],
+        tempHomeDir,
+      );
+      expect(activeExtensions.every((e) => e.autoUpdate)).toBe(true);
+    });
+
+    it('should be false for all extensions if autoUpdate is false', () => {
+      const settingsDir = path.join(tempHomeDir, GEMINI_DIR);
+      fs.mkdirSync(settingsDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(settingsDir, 'settings.json'),
+        JSON.stringify({ extensions: { autoUpdate: false } }),
+      );
+
+      const activeExtensions = annotateActiveExtensions(
+        extensions,
+        [],
+        tempHomeDir,
+      );
+      expect(activeExtensions.every((e) => !e.autoUpdate)).toBe(true);
+    });
+
+    it('should respect the per-extension settings', () => {
+      const settingsDir = path.join(tempHomeDir, GEMINI_DIR);
+      fs.mkdirSync(settingsDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(settingsDir, 'settings.json'),
+        JSON.stringify({
+          extensions: { autoUpdate: { ext1: true, ext3: false } },
+        }),
+      );
+
+      const activeExtensions = annotateActiveExtensions(
+        extensions,
+        [],
+        tempHomeDir,
+      );
+      expect(activeExtensions.find((e) => e.name === 'ext1')?.autoUpdate).toBe(
+        true,
+      );
+      expect(activeExtensions.find((e) => e.name === 'ext2')?.autoUpdate).toBe(
+        false,
+      );
+      expect(activeExtensions.find((e) => e.name === 'ext3')?.autoUpdate).toBe(
+        false,
+      );
+    });
+  });
 });
 
 describe('installExtension', () => {
