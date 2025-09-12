@@ -29,8 +29,8 @@ export {
   IdeConnectionEvent,
   IdeConnectionType,
   ExtensionInstallEvent,
-  ExtensionUninstallEvent,
   ExtensionEnableEvent,
+  ExtensionUninstallEvent,
 } from './src/telemetry/types.js';
 export { makeFakeConfig } from './src/test-utils/config.js';
 export * from './src/utils/pathReader.js';
