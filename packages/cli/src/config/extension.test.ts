@@ -702,7 +702,9 @@ describe('uninstallExtension', () => {
     await uninstallExtension('my-local-extension');
 
     const logger = ClearcutLogger.getInstance({} as Config);
-    expect(logger?.logExtensionUninstallEvent).toHaveBeenCalledWith(new ExtensionUninstallEvent('my-local-extension', 'success'));
+    expect(logger?.logExtensionUninstallEvent).toHaveBeenCalledWith(
+      new ExtensionUninstallEvent('my-local-extension', 'success'),
+    );
   });
 });
 
