@@ -177,12 +177,12 @@ export async function startInteractiveUI(
   };
 
   const instance = render(
-    process.env['NODE_ENV'] === 'production' ? (
-      <AppWrapper />
-    ) : (
+    process.env['DEBUG'] ? (
       <React.StrictMode>
         <AppWrapper />
       </React.StrictMode>
+    ) : (
+        <AppWrapper />
     ),
     {
       exitOnCtrlC: false,
