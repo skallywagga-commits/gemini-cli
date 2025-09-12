@@ -612,10 +612,10 @@ export class ExtensionEnableEvent implements BaseTelemetryEvent {
   extension_name: string;
   settingScope: string;
 
-  constructor(extension_name: string, settingsScope: string) {
+  constructor(extension_name: string, settingScope: string) {
     this['event.name'] = 'extension_enable';
     this['event.timestamp'] = new Date().toISOString();
     this.extension_name = extension_name;
-    this.settingScope = settingsScope;
+    this.settingScope = settingScope;
   }
 }
