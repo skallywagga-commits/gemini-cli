@@ -15,6 +15,7 @@ import {
   Config,
   ExtensionInstallEvent,
   ExtensionUninstallEvent,
+  ExtensionEnableEvent
 } from '@google/gemini-cli-core';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -26,7 +27,6 @@ import { recursivelyHydrateStrings } from './extensions/variables.js';
 import { isWorkspaceTrusted } from './trustedFolders.js';
 import { resolveEnvVarsInObject } from '../utils/envVarResolver.js';
 import { randomUUID } from 'node:crypto';
-import { ExtensionEnableEvent } from '@google/gemini-cli-core/src/telemetry/types.js';
 
 export const EXTENSIONS_DIRECTORY_NAME = path.join(GEMINI_DIR, 'extensions');
 

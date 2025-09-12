@@ -23,6 +23,7 @@ export {
   IdeConnectionType,
   ExtensionInstallEvent,
   ExtensionUninstallEvent,
+  ExtensionEnableEvent,
 } from './src/telemetry/types.js';
 export { getIdeTrust } from './src/utils/ide-trust.js';
 export { makeFakeConfig } from './src/test-utils/config.js';
