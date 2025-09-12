@@ -351,7 +351,7 @@ export enum EventMetadataKey {
   GEMINI_CLI_EXTENSION_INSTALL_STATUS = 88,
 
   // Logs the status of the extension uninstall
-  GEMINI_CLI_EXTENSION_UNINSTALL_STATUS = 94,
+  GEMINI_CLI_EXTENSION_UNINSTALL_STATUS = 96,
 
   // ==========================================================================
   // Tool Output Truncated Event Keys
