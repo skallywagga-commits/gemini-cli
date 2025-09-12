@@ -749,16 +749,16 @@ const SETTINGS_SCHEMA = {
       enableToolOutputTruncation: {
         type: 'boolean',
         label: 'Enable Tool Output Truncation',
-        category: 'General',
+        category: 'Tools',
         requiresRestart: true,
-        default: false,
+        default: true,
         description: 'Enable truncation of large tool outputs.',
         showInDialog: true,
       },
       truncateToolOutputThreshold: {
         type: 'number',
         label: 'Tool Output Truncation Threshold',
-        category: 'General',
+        category: 'Tools',
         requiresRestart: true,
         default: DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
         description:
@@ -768,7 +768,7 @@ const SETTINGS_SCHEMA = {
       truncateToolOutputLines: {
         type: 'number',
         label: 'Tool Output Truncation Lines',
-        category: 'General',
+        category: 'Tools',
         requiresRestart: true,
         default: DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES,
         description: 'The number of lines to keep when truncating tool output.',
