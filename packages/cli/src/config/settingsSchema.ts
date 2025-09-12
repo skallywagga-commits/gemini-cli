@@ -999,8 +999,8 @@ const SETTINGS_SCHEMA = {
         type: 'object',
         label: 'Auto Update Extensions',
         category: 'Extensions',
-        requiresRestart: false,
-        default: true as boolean | Record<string, boolean>,
+        requiresRestart: true,
+        default: false as boolean | Record<string, boolean>,
         description:
           'Enable or disable automatic updates for extensions. Can be a boolean to control all extensions, or an object to configure per-extension.',
         showInDialog: true,
