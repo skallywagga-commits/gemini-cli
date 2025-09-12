@@ -31,6 +31,7 @@ import {
   ClearcutLogger,
   type Config,
   ExtensionEnableEvent,
+  ExtensionUninstallEvent,
 } from '@google/gemini-cli-core';
 import { execSync } from 'node:child_process';
 import { SettingScope, loadSettings } from './settings.js';
@@ -88,6 +89,7 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
     },
     Config: vi.fn(),
     ExtensionInstallEvent: vi.fn(),
+    ExtensionUninstallEvent: vi.fn(),
   };
 });
 
@@ -703,7 +705,9 @@ describe('uninstallExtension', () => {
     await uninstallExtension('my-local-extension');
 
     const logger = ClearcutLogger.getInstance({} as Config);
-    expect(logger?.logExtensionUninstallEvent).toHaveBeenCalled();
+    expect(logger?.logExtensionUninstallEvent).toHaveBeenCalledWith(
+      new ExtensionUninstallEvent('my-local-extension', 'success'),
+    );
   });
 });
 
