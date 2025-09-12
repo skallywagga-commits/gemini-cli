@@ -60,6 +60,7 @@ export enum EventNames {
   INVALID_CHUNK = 'invalid_chunk',
   CONTENT_RETRY = 'content_retry',
   CONTENT_RETRY_FAILURE = 'content_retry_failure',
+  EXTENSION_ENABLE = 'extension_enable',
   EXTENSION_INSTALL = 'extension_install',
   EXTENSION_UNINSTALL = 'extension_uninstall',
   TOOL_OUTPUT_TRUNCATED = 'tool_output_truncated',
@@ -897,7 +898,7 @@ export class ClearcutLogger {
     ];
 
     this.enqueueLogEvent(
-      this.createLogEvent(EventNames.EXTENSION_UNINSTALL, data),
+      this.createLogEvent(EventNames.EXTENSION_ENABLE, data),
     );
     this.flushIfNeeded();
   }
