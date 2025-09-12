@@ -26,6 +26,7 @@ import { recursivelyHydrateStrings } from './extensions/variables.js';
 import { isWorkspaceTrusted } from './trustedFolders.js';
 import { resolveEnvVarsInObject } from '../utils/envVarResolver.js';
 import { randomUUID } from 'node:crypto';
+import { ExtensionEnableEvent } from '@google/gemini-cli-core/src/telemetry/types.js';
 
 export const EXTENSIONS_DIRECTORY_NAME = path.join(GEMINI_DIR, 'extensions');
 
@@ -657,7 +658,9 @@ export function disableExtension(
 }
 
 export function enableExtension(name: string, scopes: SettingScope[]) {
+  const logger = getClearcutLogger(process.cwd());
   removeFromDisabledExtensions(name, scopes);
+  logger?.logExtensionEnableEvent(new ExtensionEnableEvent(name, JSON.stringify(scopes)));
 }
 
 /**
