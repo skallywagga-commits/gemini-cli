@@ -113,7 +113,7 @@ export function createPolicyEngineConfig(
   }
 
   // MCP servers that are explicitly excluded in settings.mcp.excluded
-  // Priority: 195 (high priority to block servers, but individual tools can override)
+  // Priority: 195 (high priority to block servers)
   if (settings.mcp?.excluded) {
     for (const serverName of settings.mcp.excluded) {
       rules.push({

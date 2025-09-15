@@ -5,8 +5,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ApprovalMode, PolicyDecision } from '@google/gemini-cli-core';
-import { PolicyEngine } from '@google/gemini-cli-core/dist/src/policy/policy-engine.js';
+import {
+  ApprovalMode,
+  PolicyDecision,
+  PolicyEngine,
+} from '@google/gemini-cli-core';
 import { createPolicyEngineConfig } from './policy.js';
 import type { Settings } from './settings.js';
 

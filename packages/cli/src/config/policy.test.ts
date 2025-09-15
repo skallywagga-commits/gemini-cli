@@ -356,4 +356,135 @@ describe('createPolicyEngineConfig', () => {
     expect(noTrustRule).toBeUndefined();
     expect(explicitFalseRule).toBeUndefined();
   });
+
+  it('should not add write tool rules in YOLO mode', () => {
+    const settings: Settings = {
+      tools: { exclude: ['dangerous-tool'] },
+    };
+    const config = createPolicyEngineConfig(settings, ApprovalMode.YOLO);
+
+    // Should have the wildcard allow rule with priority 0
+    const wildcardRule = config.rules?.find(
+      (r) =>
+        !r.toolName && r.decision === PolicyDecision.ALLOW && r.priority === 0,
+    );
+    expect(wildcardRule).toBeDefined();
+
+    // Should NOT have any write tool rules (which would have priority 10)
+    const writeToolRules = config.rules?.filter(
+      (r) =>
+        [
+          'replace',
+          'save_memory',
+          'run_shell_command',
+          'write_file',
+          'web_fetch',
+        ].includes(r.toolName || '') && r.decision === PolicyDecision.ASK_USER,
+    );
+    expect(writeToolRules).toHaveLength(0);
+
+    // Should still have the exclude rule
+    const excludeRule = config.rules?.find(
+      (r) =>
+        r.toolName === 'dangerous-tool' && r.decision === PolicyDecision.DENY,
+    );
+    expect(excludeRule).toBeDefined();
+    expect(excludeRule?.priority).toBe(200);
+  });
+
+  it('should handle combination of trusted server and excluded server for same name', () => {
+    const settings: Settings = {
+      mcpServers: {
+        'conflicted-server': {
+          command: 'node',
+          args: ['server.js'],
+          trust: true, // Priority 90
+        },
+      },
+      mcp: {
+        excluded: ['conflicted-server'], // Priority 195
+      },
+    };
+    const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
+
+    // Both rules should exist
+    const trustRule = config.rules?.find(
+      (r) =>
+        r.toolName === 'conflicted-server__*' &&
+        r.decision === PolicyDecision.ALLOW,
+    );
+    const excludeRule = config.rules?.find(
+      (r) =>
+        r.toolName === 'conflicted-server__*' &&
+        r.decision === PolicyDecision.DENY,
+    );
+
+    expect(trustRule).toBeDefined();
+    expect(trustRule?.priority).toBe(90);
+    expect(excludeRule).toBeDefined();
+    expect(excludeRule?.priority).toBe(195);
+
+    // Exclude (195) should win over trust (90) when evaluated
+  });
+
+  it('should create all read-only tool rules when autoAccept is enabled', () => {
+    const settings: Settings = {
+      tools: { autoAccept: true },
+    };
+    const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
+
+    // All read-only tools should have allow rules
+    const readOnlyTools = [
+      'glob',
+      'search_file_content',
+      'list_directory',
+      'read_file',
+      'read_many_files',
+      'google_web_search',
+    ];
+    for (const tool of readOnlyTools) {
+      const rule = config.rules?.find(
+        (r) => r.toolName === tool && r.decision === PolicyDecision.ALLOW,
+      );
+      expect(rule).toBeDefined();
+      expect(rule?.priority).toBe(50);
+    }
+  });
+
+  it('should handle all approval modes correctly', () => {
+    const settings: Settings = {};
+
+    // Test DEFAULT mode
+    const defaultConfig = createPolicyEngineConfig(
+      settings,
+      ApprovalMode.DEFAULT,
+    );
+    expect(defaultConfig.defaultDecision).toBe(PolicyDecision.ASK_USER);
+    expect(
+      defaultConfig.rules?.find(
+        (r) => !r.toolName && r.decision === PolicyDecision.ALLOW,
+      ),
+    ).toBeUndefined();
+
+    // Test YOLO mode
+    const yoloConfig = createPolicyEngineConfig(settings, ApprovalMode.YOLO);
+    expect(yoloConfig.defaultDecision).toBe(PolicyDecision.ASK_USER);
+    const yoloWildcard = yoloConfig.rules?.find(
+      (r) => !r.toolName && r.decision === PolicyDecision.ALLOW,
+    );
+    expect(yoloWildcard).toBeDefined();
+    expect(yoloWildcard?.priority).toBe(0);
+
+    // Test AUTO_EDIT mode
+    const autoEditConfig = createPolicyEngineConfig(
+      settings,
+      ApprovalMode.AUTO_EDIT,
+    );
+    expect(autoEditConfig.defaultDecision).toBe(PolicyDecision.ASK_USER);
+    const editRule = autoEditConfig.rules?.find(
+      (r) => r.toolName === 'edit' && r.decision === PolicyDecision.ALLOW,
+    );
+    expect(editRule).toBeDefined();
+    expect(editRule?.priority).toBe(10);
+  });
 });
