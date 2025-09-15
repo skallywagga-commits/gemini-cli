@@ -6,14 +6,16 @@
 
 import type { CommandModule } from 'yargs';
 import {
-  updateExtensionByName,
   updateAllUpdatableExtensions,
   type ExtensionUpdateInfo,
   loadExtensions,
   annotateActiveExtensions,
   checkForAllExtensionUpdates,
+  checkForExtensionUpdate,
+  updateExtension,
 } from '../../config/extension.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { ExtensionUpdateState } from '../../ui/state/extensions.js';
 
 interface UpdateArgs {
   name?: string;
@@ -37,7 +39,7 @@ export async function handleUpdate(args: UpdateArgs) {
       let updateInfos = await updateAllUpdatableExtensions(
         workingDir,
         extensions,
-        await checkForAllExtensionUpdates(extensions, (_) => {}),
+        await checkForAllExtensionUpdates(extensions, new Map(), (_) => {}),
         () => {},
       );
       updateInfos = updateInfos.filter(
@@ -54,13 +56,28 @@ export async function handleUpdate(args: UpdateArgs) {
   }
   if (args.name)
     try {
-      // TODO(chrstnb): we should list extensions if the requested extension is not installed.
-      const updatedExtensionInfo = await updateExtensionByName(
-        args.name,
-        workingDir,
-        extensions,
-        () => {},
+      const extension = extensions.find(
+        (extension) => extension.name === args.name,
       );
+      if (!extension) {
+        console.log(`Extension "${args.name}" not found.`);
+        return;
+      }
+      let updateState: ExtensionUpdateState | undefined;
+      await checkForExtensionUpdate(extension, (newState) => {
+        updateState = newState;
+      });
+      if (updateState !== ExtensionUpdateState.UPDATE_AVAILABLE) {
+        console.log(`Extension "${args.name}" is already up to date.`);
+        return;
+      }
+      // TODO(chrstnb): we should list extensions if the requested extension is not installed.
+      const updatedExtensionInfo = (await updateExtension(
+        extension,
+        workingDir,
+        updateState,
+        () => {},
+      ))!;
       if (
         updatedExtensionInfo.originalVersion !==
         updatedExtensionInfo.updatedVersion
@@ -69,7 +86,7 @@ export async function handleUpdate(args: UpdateArgs) {
           `Extension "${args.name}" successfully updated: ${updatedExtensionInfo.originalVersion} → ${updatedExtensionInfo.updatedVersion}.`,
         );
       } else {
-        console.log(`Extension "${args.name}" already up to date.`);
+        console.log(`Extension "${args.name}" is already up to date.`);
       }
     } catch (error) {
       console.error(getErrorMessage(error));

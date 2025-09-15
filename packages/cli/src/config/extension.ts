@@ -27,6 +27,9 @@ import { isWorkspaceTrusted } from './trustedFolders.js';
 import { resolveEnvVarsInObject } from '../utils/envVarResolver.js';
 import { randomUUID } from 'node:crypto';
 import { ExtensionUpdateState } from '../ui/state/extensions.js';
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import type { UseHistoryManagerReturn } from '../ui/hooks/useHistoryManager.js';
+import { MessageType } from '../ui/types.js';
 
 export const EXTENSIONS_DIRECTORY_NAME = path.join(GEMINI_DIR, 'extensions');
 
@@ -429,6 +432,7 @@ async function promptForContinuation(prompt: string): Promise<boolean> {
 export async function installExtension(
   installMetadata: ExtensionInstallMetadata,
   cwd: string = process.cwd(),
+  isUpdate: boolean = false,
 ): Promise<string> {
   const logger = getClearcutLogger(cwd);
   let newExtensionConfig: ExtensionConfig | null = null;
@@ -502,11 +506,14 @@ export async function installExtension(
           'The extension will append info to your gemini.md context',
         );
 
-        const shouldContinue = await promptForContinuation(
-          'Do you want to continue? (y/n): ',
-        );
-        if (!shouldContinue) {
-          throw new Error('Installation cancelled by user.');
+        // Only prompt for new installs.
+        if (!isUpdate) {
+          const shouldContinue = await promptForContinuation(
+            'Do you want to continue? (y/n): ',
+          );
+          if (!shouldContinue) {
+            throw new Error('Installation cancelled by user.');
+          }
         }
       }
 
@@ -638,28 +645,16 @@ export function toOutputString(extension: Extension): string {
   return output;
 }
 
-export async function updateExtensionByName(
-  extensionName: string,
-  cwd: string = process.cwd(),
-  extensions: GeminiCLIExtension[],
-  setExtensionUpdateState: (updateState: ExtensionUpdateState) => void,
-): Promise<ExtensionUpdateInfo> {
-  const extension = extensions.find(
-    (installed) => installed.name === extensionName,
-  );
-  if (!extension) {
-    throw new Error(
-      `Extension "${extensionName}" not found. Run gemini extensions list to see available extensions.`,
-    );
-  }
-  return await updateExtension(extension, cwd, setExtensionUpdateState);
-}
-
 export async function updateExtension(
   extension: GeminiCLIExtension,
   cwd: string = process.cwd(),
+  currentState: ExtensionUpdateState,
   setExtensionUpdateState: (updateState: ExtensionUpdateState) => void,
-): Promise<ExtensionUpdateInfo> {
+): Promise<ExtensionUpdateInfo | undefined> {
+  if (currentState === ExtensionUpdateState.UPDATING) {
+    return undefined;
+  }
+  setExtensionUpdateState(ExtensionUpdateState.UPDATING);
   if (!extension.type) {
     setExtensionUpdateState(ExtensionUpdateState.ERROR);
     throw new Error(
@@ -670,7 +665,6 @@ export async function updateExtension(
     setExtensionUpdateState(ExtensionUpdateState.UP_TO_DATE);
     throw new Error(`Extension is linked so does not need to be updated`);
   }
-  setExtensionUpdateState(ExtensionUpdateState.UPDATING);
   const originalVersion = extension.version;
 
   const tempDir = await ExtensionStorage.createTmpDir();
@@ -684,6 +678,7 @@ export async function updateExtension(
         ref: extension.ref,
       },
       cwd,
+      true,
     );
 
     const updatedExtensionStorage = new ExtensionStorage(extension.name);
@@ -766,25 +761,34 @@ export async function updateAllUpdatableExtensions(
   cwd: string = process.cwd(),
   extensions: GeminiCLIExtension[],
   extensionsState: Map<string, ExtensionUpdateState>,
-  setExtensionsUpdateState: (
-    updateState: Map<string, ExtensionUpdateState>,
-  ) => void,
+  setExtensionsUpdateState: Dispatch<
+    SetStateAction<Map<string, ExtensionUpdateState>>
+  >,
 ): Promise<ExtensionUpdateInfo[]> {
-  return await Promise.all(
-    extensions
-      .filter(
-        (extension) =>
-          extensionsState.get(extension.name) ===
-          ExtensionUpdateState.UPDATE_AVAILABLE,
-      )
-      .map((extension) =>
-        updateExtension(extension, cwd, (updateState) => {
-          const newState = new Map(extensionsState);
-          newState.set(extension.name, updateState);
-          setExtensionsUpdateState(newState);
-        }),
-      ),
-  );
+  return (
+    await Promise.all(
+      extensions
+        .filter(
+          (extension) =>
+            extensionsState.get(extension.name) ===
+            ExtensionUpdateState.UPDATE_AVAILABLE,
+        )
+        .map((extension) =>
+          updateExtension(
+            extension,
+            cwd,
+            extensionsState.get(extension.name)!,
+            (updateState) => {
+              setExtensionsUpdateState((prev) => {
+                const finalState = new Map(prev);
+                finalState.set(extension.name, updateState);
+                return finalState;
+              });
+            },
+          ),
+        ),
+    )
+  ).filter((updateInfo) => !!updateInfo);
 }
 
 export interface ExtensionUpdateCheckResult {
@@ -794,23 +798,35 @@ export interface ExtensionUpdateCheckResult {
 
 export async function checkForAllExtensionUpdates(
   extensions: GeminiCLIExtension[],
-  setExtensionsUpdateState: (
-    updateState: Map<string, ExtensionUpdateState>,
-  ) => void,
+  extensionsUpdateState: Map<string, ExtensionUpdateState>,
+  setExtensionsUpdateState: Dispatch<
+    SetStateAction<Map<string, ExtensionUpdateState>>
+  >,
 ): Promise<Map<string, ExtensionUpdateState>> {
-  const finalState = new Map<string, ExtensionUpdateState>();
   for (const extension of extensions) {
-    finalState.set(extension.name, await checkForExtensionUpdate(extension));
+    const initialState = extensionsUpdateState.get(extension.name);
+    if (initialState === undefined) {
+      await checkForExtensionUpdate(extension, (updatedState) => {
+        setExtensionsUpdateState((prev) => {
+          extensionsUpdateState = new Map(prev);
+          extensionsUpdateState.set(extension.name, updatedState);
+          return extensionsUpdateState;
+        });
+      });
+    }
   }
-  setExtensionsUpdateState(finalState);
-  return finalState;
+  return extensionsUpdateState;
 }
 
 export async function checkForExtensionUpdate(
   extension: GeminiCLIExtension,
-): Promise<ExtensionUpdateState> {
+  setExtensionUpdateState: (updateState: ExtensionUpdateState) => void,
+): Promise<void> {
+  setExtensionUpdateState(ExtensionUpdateState.CHECKING_FOR_UPDATES);
+
   if (extension.type !== 'git') {
-    return ExtensionUpdateState.NOT_UPDATABLE;
+    setExtensionUpdateState(ExtensionUpdateState.NOT_UPDATABLE);
+    return;
   }
 
   try {
@@ -818,12 +834,13 @@ export async function checkForExtensionUpdate(
     const remotes = await git.getRemotes(true);
     if (remotes.length === 0) {
       console.error('No git remotes found.');
-      return ExtensionUpdateState.ERROR;
+      setExtensionUpdateState(ExtensionUpdateState.ERROR);
     }
     const remoteUrl = remotes[0].refs.fetch;
     if (!remoteUrl) {
       console.error(`No fetch URL found for git remote ${remotes[0].name}.`);
-      return ExtensionUpdateState.ERROR;
+      setExtensionUpdateState(ExtensionUpdateState.ERROR);
+      return;
     }
 
     // Determine the ref to check on the remote.
@@ -833,7 +850,8 @@ export async function checkForExtensionUpdate(
 
     if (typeof lsRemoteOutput !== 'string' || lsRemoteOutput.trim() === '') {
       console.error(`Git ref ${refToCheck} not found.`);
-      return ExtensionUpdateState.ERROR;
+      setExtensionUpdateState(ExtensionUpdateState.ERROR);
+      return;
     }
 
     const remoteHash = lsRemoteOutput.split('\t')[0];
@@ -843,11 +861,14 @@ export async function checkForExtensionUpdate(
       console.error(
         `Unable to parse hash from git ls-remote output "${lsRemoteOutput}"`,
       );
-      return ExtensionUpdateState.ERROR;
+      setExtensionUpdateState(ExtensionUpdateState.ERROR);
+      return;
     } else if (remoteHash === localHash) {
-      return ExtensionUpdateState.UP_TO_DATE;
+      setExtensionUpdateState(ExtensionUpdateState.UP_TO_DATE);
+      return;
     } else {
-      return ExtensionUpdateState.UPDATE_AVAILABLE;
+      setExtensionUpdateState(ExtensionUpdateState.UPDATE_AVAILABLE);
+      return;
     }
   } catch (error) {
     console.error(
@@ -855,6 +876,76 @@ export async function checkForExtensionUpdate(
         extension.name
       }": ${getErrorMessage(error)}`,
     );
-    return ExtensionUpdateState.ERROR;
+    setExtensionUpdateState(ExtensionUpdateState.ERROR);
+    return;
   }
 }
+
+export const useExtensionUpdates = (
+  extensions: GeminiCLIExtension[],
+  addItem: UseHistoryManagerReturn['addItem'],
+  cwd: string,
+) => {
+  const [extensionsUpdateState, setExtensionsUpdateState] = useState(
+    new Map<string, ExtensionUpdateState>(),
+  );
+  useMemo(async () => {
+    const updateState = await checkForAllExtensionUpdates(
+      extensions,
+      extensionsUpdateState,
+      setExtensionsUpdateState,
+    );
+    for (const extension of extensions) {
+      const prevState = extensionsUpdateState.get(extension.name);
+      const currentState = updateState.get(extension.name);
+      if (
+        prevState === currentState ||
+        currentState !== ExtensionUpdateState.UPDATE_AVAILABLE
+      ) {
+        continue;
+      }
+      if (extension.autoUpdate) {
+        updateExtension(extension, cwd, currentState, (newState) => {
+          setExtensionsUpdateState((prev) => {
+            const finalState = new Map(prev);
+            finalState.set(extension.name, newState);
+            return finalState;
+          });
+        })
+          .then((result) => {
+            if (!result) return;
+            addItem(
+              {
+                type: MessageType.INFO,
+                text: `Extension "${extension.name}" successfully updated: ${result.originalVersion} → ${result.updatedVersion}.`,
+              },
+              Date.now(),
+            );
+          })
+          .catch((error) => {
+            console.error(
+              `Error updating extension "${extension.name}": ${getErrorMessage(error)}.`,
+            );
+          });
+      } else {
+        addItem(
+          {
+            type: MessageType.INFO,
+            text: `Extension ${extension.name} has an update available, run "/extensions update ${extension.name}" to install it.`,
+          },
+          Date.now(),
+        );
+      }
+    }
+  }, [
+    extensions,
+    extensionsUpdateState,
+    setExtensionsUpdateState,
+    addItem,
+    cwd,
+  ]);
+  return {
+    extensionsUpdateState,
+    setExtensionsUpdateState,
+  };
+};
