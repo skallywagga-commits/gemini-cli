@@ -835,6 +835,7 @@ export async function checkForExtensionUpdate(
     if (remotes.length === 0) {
       console.error('No git remotes found.');
       setExtensionUpdateState(ExtensionUpdateState.ERROR);
+      return;
     }
     const remoteUrl = remotes[0].refs.fetch;
     if (!remoteUrl) {
