@@ -11,7 +11,9 @@ import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.
 const createIamApiUrl = (targetSA: string) =>
   `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${encodeURIComponent(targetSA)}:generateIdToken`;
 
-export class GoogleIAPProvider implements OAuthClientProvider {
+export class ServiceAccountImpersonationProvider
+  implements OAuthClientProvider
+{
   private readonly targetUrl: string | undefined;
   private readonly targetSA: string;
   private readonly IAPAudience: string; // OAuth Client Id
@@ -20,7 +22,7 @@ export class GoogleIAPProvider implements OAuthClientProvider {
   // Properties required by OAuthClientProvider, with no-op values
   readonly redirectUrl = '';
   readonly clientMetadata: OAuthClientMetadata = {
-    client_name: 'Gemini CLI (Google IAP)',
+    client_name: 'Gemini CLI (Service Account Impersonation)',
     redirect_uris: [],
     grant_types: [],
     response_types: [],

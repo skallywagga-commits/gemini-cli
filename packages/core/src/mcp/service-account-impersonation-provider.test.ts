@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GoogleIAPProvider } from './iap-provider.js';
+import { ServiceAccountImpersonationProvider } from './service-account-impersonation-provider.js';
 import type { MCPServerConfig } from '../config/config.js';
 
 const mockRequest = vi.fn();
@@ -24,7 +24,7 @@ vi.mock('google-auth-library', async (importOriginal) => {
   };
 });
 
-describe('GoogleIAPProvider', () => {
+describe('ServiceAccountImpersonationProvider', () => {
   beforeEach(() => {
     // Reset mocks before each test
     vi.clearAllMocks();
@@ -32,7 +32,7 @@ describe('GoogleIAPProvider', () => {
 
   it('should throw an error if no URL is provided', () => {
     const config: MCPServerConfig = {};
-    expect(() => new GoogleIAPProvider(config)).toThrow(
+    expect(() => new ServiceAccountImpersonationProvider(config)).toThrow(
       'A url or httpUrl must be provided for the Google ID Token provider',
     );
   });
@@ -45,7 +45,7 @@ describe('GoogleIAPProvider', () => {
     const mockToken = 'mock-id-token-123';
     mockRequest.mockResolvedValue({ data: { token: mockToken } });
 
-    const provider = new GoogleIAPProvider(validConfig);
+    const provider = new ServiceAccountImpersonationProvider(validConfig);
     const tokens = await provider.tokens();
 
     expect(tokens).toBeDefined();
@@ -60,7 +60,7 @@ describe('GoogleIAPProvider', () => {
 
     mockRequest.mockResolvedValue({ data: { token: null } });
 
-    const provider = new GoogleIAPProvider(validConfig);
+    const provider = new ServiceAccountImpersonationProvider(validConfig);
     const tokens = await provider.tokens();
 
     expect(tokens).toBeUndefined();
@@ -73,7 +73,7 @@ describe('GoogleIAPProvider', () => {
 
     mockRequest.mockResolvedValue({ data: { token: 'test-token' } });
 
-    const provider = new GoogleIAPProvider(config);
+    const provider = new ServiceAccountImpersonationProvider(config);
     await provider.tokens();
 
     expect(mockRequest).toHaveBeenCalledWith({

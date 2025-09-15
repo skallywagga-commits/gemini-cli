@@ -24,7 +24,7 @@ import { parse } from 'shell-quote';
 import type { Config, MCPServerConfig } from '../config/config.js';
 import { AuthProviderType } from '../config/config.js';
 import { GoogleCredentialProvider } from '../mcp/google-auth-provider.js';
-import { GoogleIAPProvider } from '../mcp/iap-provider.js';
+import { ServiceAccountImpersonationProvider } from '../mcp/service-account-impersonation-provider.js';
 import { DiscoveredMCPTool } from './mcp-tool.js';
 
 import type { FunctionDeclaration } from '@google/genai';
@@ -1242,7 +1242,7 @@ export async function createTransport(
   debugMode: boolean,
 ): Promise<Transport> {
   if (mcpServerConfig.authProviderType === 'iap') {
-    const provider = new GoogleIAPProvider(mcpServerConfig);
+    const provider = new ServiceAccountImpersonationProvider(mcpServerConfig);
     const transportOptions: SSEClientTransportOptions = {
       authProvider: provider,
     };
