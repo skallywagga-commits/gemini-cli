@@ -1258,10 +1258,12 @@ export async function createTransport(
         transportOptions,
       );
     } else if (mcpServerConfig.url) {
-    // Default to SSE if only url is provided
-    return new SSEClientTransport(new URL(targetUrl), transportOptions);
+      // Default to SSE if only url is provided
+      return new SSEClientTransport(new URL(targetUrl), transportOptions);
     } else {
-      throw new Error('No URL configured for ServiceAccountImpersonation MCP Server');
+      throw new Error(
+        'No URL configured for ServiceAccountImpersonation MCP Server',
+      );
     }
   }
 

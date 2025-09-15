@@ -24,6 +24,12 @@ vi.mock('google-auth-library', async (importOriginal) => {
   };
 });
 
+const defaultSAConfig: MCPServerConfig = {
+  url: 'https://my-iap-service.run.app',
+  targetAudience: 'my-audience',
+  targetServiceAccount: 'my-sa',
+};
+
 describe('ServiceAccountImpersonationProvider', () => {
   beforeEach(() => {
     // Reset mocks before each test
@@ -31,16 +37,26 @@ describe('ServiceAccountImpersonationProvider', () => {
   });
 
   it('should throw an error if no URL is provided', () => {
-    const config: MCPServerConfig = {};
+    const config: MCPServerConfig = {
+      url: 'https://my-iap-service.run.app',
+    };
     expect(() => new ServiceAccountImpersonationProvider(config)).toThrow(
-      'A url or httpUrl must be provided for the Google ID Token provider',
+      'targetAudience must be provided for the Service Account Impersonation provider',
+    );
+  });
+
+  it('should throw an error if no targetSA is provided', () => {
+    const config: MCPServerConfig = {
+      url: 'https://my-iap-service.run.app',
+      targetAudience: 'my-audience',
+    };
+    expect(() => new ServiceAccountImpersonationProvider(config)).toThrow(
+      'targetSA must be provided for the Service Account Impersonation provider',
     );
   });
 
   it('should correctly get tokens for a valid config', async () => {
-    const validConfig: MCPServerConfig = {
-      url: 'https://my-iap-service.run.app',
-    };
+    const validConfig: MCPServerConfig = defaultSAConfig;
 
     const mockToken = 'mock-id-token-123';
     mockRequest.mockResolvedValue({ data: { token: mockToken } });
@@ -54,9 +70,7 @@ describe('ServiceAccountImpersonationProvider', () => {
   });
 
   it('should return undefined if token acquisition fails', async () => {
-    const validConfig: MCPServerConfig = {
-      url: 'https://my-iap-service.run.app',
-    };
+    const validConfig: MCPServerConfig = defaultSAConfig;
 
     mockRequest.mockResolvedValue({ data: { token: null } });
 
@@ -66,11 +80,8 @@ describe('ServiceAccountImpersonationProvider', () => {
     expect(tokens).toBeUndefined();
   });
 
-  // TODO: add SA & targetAudience
   it('should make a request with the correct parameters', async () => {
-    const config: MCPServerConfig = {
-      url: 'https://my-iap-service.run.app',
-    };
+    const config: MCPServerConfig = defaultSAConfig;
 
     mockRequest.mockResolvedValue({ data: { token: 'test-token' } });
 
@@ -78,10 +89,10 @@ describe('ServiceAccountImpersonationProvider', () => {
     await provider.tokens();
 
     expect(mockRequest).toHaveBeenCalledWith({
-      url: 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/TARGET_SA:generateIdToken',
+      url: 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/my-sa:generateIdToken',
       method: 'POST',
       data: {
-        audience: '...',
+        audience: 'my-audience',
         includeEmail: true,
       },
     });
