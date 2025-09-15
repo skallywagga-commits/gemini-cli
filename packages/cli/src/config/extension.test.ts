@@ -33,6 +33,7 @@ import {
   type Config,
   ExtensionEnableEvent,
   ExtensionUninstallEvent,
+  logExtensionEnable,
 } from '@google/gemini-cli-core';
 import { execSync } from 'node:child_process';
 import { SettingScope, loadSettings } from './settings.js';
@@ -74,6 +75,7 @@ vi.mock('./trustedFolders.js', async (importOriginal) => {
   };
 });
 
+const mockLogExtensionEnable = vi.hoisted(() => vi.fn());
 vi.mock('@google/gemini-cli-core', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@google/gemini-cli-core')>();
@@ -82,6 +84,7 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
   const mockLogExtensionUninstallEvent = vi.fn();
   return {
     ...actual,
+    logExtensionEnable: mockLogExtensionEnable,
     ClearcutLogger: {
       getInstance: vi.fn(() => ({
         logExtensionEnableEvent: mockLogExtensionEnableEvent,
@@ -1377,8 +1380,8 @@ describe('enableExtension', () => {
 
     enableExtension('ext1', [SettingScope.Workspace]);
 
-    const logger = ClearcutLogger.getInstance({} as Config);
-    expect(logger?.logExtensionEnableEvent).toHaveBeenCalledWith(
+    expect(logExtensionEnable).toHaveBeenCalledWith(
+      expect.any(Object), // Config object
       new ExtensionEnableEvent(
         'ext1',
         JSON.stringify([SettingScope.Workspace]),
