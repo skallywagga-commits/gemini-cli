@@ -16,6 +16,7 @@ import {
   ExtensionInstallEvent,
   ExtensionUninstallEvent,
   ExtensionEnableEvent,
+  logExtensionEnable,
 } from '@google/gemini-cli-core';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -125,14 +126,18 @@ export async function performWorkspaceExtensionMigration(
   return failedInstallNames;
 }
 
-function getClearcutLogger(cwd: string) {
-  const config = new Config({
+function getClearcutConfig(cwd: string) {
+  return new Config({
     sessionId: randomUUID(),
     targetDir: cwd,
     cwd,
     model: '',
     debugMode: false,
   });
+}
+
+function getClearcutLogger(cwd: string) {
+  const config = getClearcutConfig(cwd);
   const logger = ClearcutLogger.getInstance(config);
   return logger;
 }
@@ -722,9 +727,9 @@ export function disableExtension(
 }
 
 export function enableExtension(name: string, scopes: SettingScope[]) {
-  const logger = getClearcutLogger(process.cwd());
   removeFromDisabledExtensions(name, scopes);
-  logger?.logExtensionEnableEvent(
+  logExtensionEnable(
+    getClearcutConfig(process.cwd()),
     new ExtensionEnableEvent(name, JSON.stringify(scopes)),
   );
 }

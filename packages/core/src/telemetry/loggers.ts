@@ -28,11 +28,13 @@ import {
   EVENT_CONTENT_RETRY_FAILURE,
   EVENT_FILE_OPERATION,
   EVENT_RIPGREP_FALLBACK,
+  EVENT_EXTENSIONS_ENABLE,
 } from './constants.js';
 import type {
   ApiErrorEvent,
   ApiRequestEvent,
   ApiResponseEvent,
+  ExtensionEnableEvent,
   FileOperationEvent,
   IdeConnectionEvent,
   StartSessionEvent,
@@ -657,4 +659,24 @@ export function logContentRetryFailure(
   };
   logger.emit(logRecord);
   recordContentRetryFailure(config);
+}
+
+export function logExtensionEnable(
+  config: Config,
+  event: ExtensionEnableEvent,
+): void {
+  if (!isTelemetrySdkInitialized()) return;
+
+  const attributes: LogAttributes = {
+    ...getCommonAttributes(config),
+    ...event,
+    'event.name': EVENT_EXTENSIONS_ENABLE,
+  };
+
+  const logger = logs.getLogger(SERVICE_NAME);
+  const logRecord: LogRecord = {
+    body: `Enabled extension ${event.extension_name}`,
+    attributes,
+  };
+  logger.emit(logRecord);
 }
