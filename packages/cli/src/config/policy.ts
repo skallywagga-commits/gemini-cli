@@ -143,18 +143,22 @@ export function createPolicyEngineConfig(
     }
   }
 
-  for (const tool of WRITE_TOOLS) {
-    rules.push({
-      toolName: tool,
-      decision: PolicyDecision.ASK_USER,
-      priority: 10,
-    });
+  // Only add write tool rules if not in YOLO mode
+  // In YOLO mode, the wildcard ALLOW rule handles everything
+  if (approvalMode !== ApprovalMode.YOLO) {
+    for (const tool of WRITE_TOOLS) {
+      rules.push({
+        toolName: tool,
+        decision: PolicyDecision.ASK_USER,
+        priority: 10,
+      });
+    }
   }
 
   if (approvalMode === ApprovalMode.YOLO) {
     rules.push({
       decision: PolicyDecision.ALLOW,
-      priority: 0, // Lowest priority
+      priority: 0, // Lowest priority - catches everything not explicitly configured
     });
   } else if (approvalMode === ApprovalMode.AUTO_EDIT) {
     rules.push({

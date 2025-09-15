@@ -22,7 +22,7 @@ function ruleMatches(
     // Support wildcard patterns: "serverName__*" matches "serverName__anyTool"
     if (rule.toolName.endsWith('__*')) {
       const prefix = rule.toolName.slice(0, -3); // Remove "__*"
-      if (!toolCall.name.startsWith(prefix + '__')) {
+      if (!toolCall.name || !toolCall.name.startsWith(prefix + '__')) {
         return false;
       }
     } else if (toolCall.name !== rule.toolName) {
