@@ -37,6 +37,13 @@ describe('ServiceAccountImpersonationProvider', () => {
   });
 
   it('should throw an error if no URL is provided', () => {
+    const config: MCPServerConfig = {};
+    expect(() => new ServiceAccountImpersonationProvider(config)).toThrow(
+      'A url or httpUrl must be provided for the Google ID Token provider',
+    );
+  });
+
+  it('should throw an error if no targetAudience is provided', () => {
     const config: MCPServerConfig = {
       url: 'https://my-iap-service.run.app',
     };
