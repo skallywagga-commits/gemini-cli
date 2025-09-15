@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as vscode from 'vscode';
 import * as fs from 'node:fs/promises';
@@ -346,4 +347,68 @@ describe('IDEServer', () => {
       );
     },
   );
+});
+
+describe('IDEServer HTTP endpoints', () => {
+  let ideServer: IDEServer;
+  let mockContext: vscode.ExtensionContext;
+  let mockLog: (message: string) => void;
+  let port: string;
+
+  beforeEach(async () => {
+    mockLog = vi.fn();
+    ideServer = new IDEServer(mockLog, mocks.diffManager);
+    mockContext = {
+      subscriptions: [],
+      environmentVariableCollection: {
+        replace: vi.fn(),
+        clear: vi.fn(),
+      },
+    } as unknown as vscode.ExtensionContext;
+    await ideServer.start(mockContext);
+    const replaceMock = mockContext.environmentVariableCollection.replace;
+    port = vi
+      .mocked(replaceMock)
+      .mock.calls.find((call) => call[0] === 'GEMINI_CLI_IDE_SERVER_PORT')?.[1]!;
+  });
+
+  afterEach(async () => {
+    await ideServer.stop();
+    vi.restoreAllMocks();
+  });
+
+  it('should deny requests with an origin header', async () => {
+    const response = await request(`http://127.0.0.1:${port}`)
+      .post('/mcp')
+      .set('Origin', 'https://evil.com')
+      .send({});
+    expect(response.status).toBe(403);
+  });
+
+  it('should allow requests without an origin header', async () => {
+    const response = await request(`http://127.0.0.1:${port}`)
+      .post('/mcp')
+      .send({ jsonrpc: '2.0', method: 'initialize' });
+    // We expect a 400 here because we are not sending a valid MCP request,
+    // but it's not a CORS error, which is what we are testing.
+    expect(response.status).toBe(400);
+  });
+
+  it('should deny requests with an invalid host header', async () => {
+    const response = await request(`http://127.0.0.1:${port}`)
+      .post('/mcp')
+      .set('Host', 'evil.com')
+      .send({});
+    expect(response.status).toBe(403);
+  });
+
+  it('should allow requests with a valid host header', async () => {
+    const response = await request(`http://127.0.0.1:${port}`)
+      .post('/mcp')
+      .set('Host', `127.0.0.1:${port}`)
+      .send({ jsonrpc: '2.0', method: 'initialize' });
+    // We expect a 400 here because we are not sending a valid MCP request,
+    // but it's not a host error, which is what we are testing.
+    expect(response.status).toBe(400);
+  });
 });
