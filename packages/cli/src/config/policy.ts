@@ -47,7 +47,7 @@ export function createPolicyEngineConfig(
   // - Higher priority numbers win over lower priority numbers
   // - When multiple rules match, the highest priority rule is applied
   // - Rules are evaluated in order of priority (highest first)
-  // 
+  //
   // Priority levels used in this configuration:
   //   0: Default allow-all (YOLO mode only)
   //   10: Write tools default to ASK_USER
@@ -73,7 +73,9 @@ export function createPolicyEngineConfig(
   // MCP servers that are trusted in the settings.
   // Priority: 90 (higher than general allowed servers but lower than explicit tool allows)
   if (settings.mcpServers) {
-    for (const [serverName, serverConfig] of Object.entries(settings.mcpServers)) {
+    for (const [serverName, serverConfig] of Object.entries(
+      settings.mcpServers,
+    )) {
       if (serverConfig.trust) {
         // Trust all tools from this MCP server
         // Using pattern matching for MCP tool names which are formatted as "serverName__toolName"

@@ -58,8 +58,7 @@ describe('createPolicyEngineConfig', () => {
     const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
     const rule = config.rules?.find(
       (r) =>
-        r.toolName === 'my-server__*' &&
-        r.decision === PolicyDecision.ALLOW,
+        r.toolName === 'my-server__*' && r.decision === PolicyDecision.ALLOW,
     );
     expect(rule).toBeDefined();
     expect(rule?.priority).toBe(85);
@@ -72,8 +71,7 @@ describe('createPolicyEngineConfig', () => {
     const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
     const rule = config.rules?.find(
       (r) =>
-        r.toolName === 'my-server__*' &&
-        r.decision === PolicyDecision.DENY,
+        r.toolName === 'my-server__*' && r.decision === PolicyDecision.DENY,
     );
     expect(rule).toBeDefined();
     expect(rule?.priority).toBe(195);
@@ -88,14 +86,14 @@ describe('createPolicyEngineConfig', () => {
           trust: true,
         },
         'untrusted-server': {
-          command: 'node', 
+          command: 'node',
           args: ['server.js'],
           trust: false,
         },
       },
     };
     const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
-    
+
     const trustedRule = config.rules?.find(
       (r) =>
         r.toolName === 'trusted-server__*' &&
@@ -103,7 +101,7 @@ describe('createPolicyEngineConfig', () => {
     );
     expect(trustedRule).toBeDefined();
     expect(trustedRule?.priority).toBe(90);
-    
+
     // Untrusted server should not have an allow rule
     const untrustedRule = config.rules?.find(
       (r) =>
@@ -128,7 +126,7 @@ describe('createPolicyEngineConfig', () => {
       },
     };
     const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
-    
+
     // Check allowed server
     const allowedRule = config.rules?.find(
       (r) =>
@@ -137,7 +135,7 @@ describe('createPolicyEngineConfig', () => {
     );
     expect(allowedRule).toBeDefined();
     expect(allowedRule?.priority).toBe(85);
-    
+
     // Check trusted server
     const trustedRule = config.rules?.find(
       (r) =>
@@ -146,7 +144,7 @@ describe('createPolicyEngineConfig', () => {
     );
     expect(trustedRule).toBeDefined();
     expect(trustedRule?.priority).toBe(90);
-    
+
     // Check excluded server
     const excludedRule = config.rules?.find(
       (r) =>
@@ -226,23 +224,22 @@ describe('createPolicyEngineConfig', () => {
       tools: { allowed: ['my-server__specific-tool'] },
     };
     const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
-    
+
     const serverDenyRule = config.rules?.find(
       (r) =>
-        r.toolName === 'my-server__*' &&
-        r.decision === PolicyDecision.DENY,
+        r.toolName === 'my-server__*' && r.decision === PolicyDecision.DENY,
     );
     const toolAllowRule = config.rules?.find(
       (r) =>
         r.toolName === 'my-server__specific-tool' &&
         r.decision === PolicyDecision.ALLOW,
     );
-    
+
     expect(serverDenyRule).toBeDefined();
     expect(serverDenyRule?.priority).toBe(195);
     expect(toolAllowRule).toBeDefined();
     expect(toolAllowRule?.priority).toBe(100);
-    
+
     // Tool allow (100) has lower priority than server deny (195),
     // so server deny wins - this might be counterintuitive
   });
@@ -260,18 +257,17 @@ describe('createPolicyEngineConfig', () => {
       tools: { exclude: ['my-server__dangerous-tool'] },
     };
     const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
-    
+
     const serverAllowRule = config.rules?.find(
       (r) =>
-        r.toolName === 'my-server__*' &&
-        r.decision === PolicyDecision.ALLOW,
+        r.toolName === 'my-server__*' && r.decision === PolicyDecision.ALLOW,
     );
     const toolDenyRule = config.rules?.find(
       (r) =>
         r.toolName === 'my-server__dangerous-tool' &&
         r.decision === PolicyDecision.DENY,
     );
-    
+
     expect(serverAllowRule).toBeDefined();
     expect(toolDenyRule).toBeDefined();
     expect(toolDenyRule!.priority).toBeGreaterThan(serverAllowRule!.priority!);
@@ -297,7 +293,7 @@ describe('createPolicyEngineConfig', () => {
       },
     };
     const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
-    
+
     // Verify glob is denied even though autoAccept would allow it
     const globDenyRule = config.rules?.find(
       (r) => r.toolName === 'glob' && r.decision === PolicyDecision.DENY,
@@ -309,17 +305,23 @@ describe('createPolicyEngineConfig', () => {
     expect(globAllowRule).toBeDefined();
     expect(globDenyRule!.priority).toBe(200);
     expect(globAllowRule!.priority).toBe(50);
-    
+
     // Verify all priority levels are correct
-    const priorities = config.rules?.map(r => ({ 
-      tool: r.toolName, 
-      decision: r.decision,
-      priority: r.priority 
-    })).sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
-    
+    const priorities = config.rules
+      ?.map((r) => ({
+        tool: r.toolName,
+        decision: r.decision,
+        priority: r.priority,
+      }))
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+
     // Check that the highest priority items are the excludes
-    const highestPriorityExcludes = priorities?.filter(p => p.priority === 200);
-    expect(highestPriorityExcludes?.every(p => p.decision === PolicyDecision.DENY)).toBe(true);
+    const highestPriorityExcludes = priorities?.filter(
+      (p) => p.priority === 200,
+    );
+    expect(
+      highestPriorityExcludes?.every((p) => p.decision === PolicyDecision.DENY),
+    ).toBe(true);
   });
 
   it('should handle MCP servers with undefined trust property', () => {
@@ -338,7 +340,7 @@ describe('createPolicyEngineConfig', () => {
       },
     };
     const config = createPolicyEngineConfig(settings, ApprovalMode.DEFAULT);
-    
+
     // Neither server should have an allow rule
     const noTrustRule = config.rules?.find(
       (r) =>
@@ -350,7 +352,7 @@ describe('createPolicyEngineConfig', () => {
         r.toolName === 'explicit-false__*' &&
         r.decision === PolicyDecision.ALLOW,
     );
-    
+
     expect(noTrustRule).toBeUndefined();
     expect(explicitFalseRule).toBeUndefined();
   });
