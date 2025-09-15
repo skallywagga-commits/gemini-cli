@@ -43,24 +43,55 @@ export function createPolicyEngineConfig(
 ): PolicyEngineConfig {
   const rules: PolicyRule[] = [];
 
+  // Priority system for policy rules:
+  // - Higher priority numbers win over lower priority numbers
+  // - When multiple rules match, the highest priority rule is applied
+  // - Rules are evaluated in order of priority (highest first)
+  // 
+  // Priority levels used in this configuration:
+  //   0: Default allow-all (YOLO mode only)
+  //   10: Write tools default to ASK_USER
+  //   50: Auto-accept read-only tools
+  //   85: MCP servers allowed list
+  //   90: MCP servers with trust=true
+  //   100: Explicitly allowed individual tools
+  //   195: Explicitly excluded MCP servers
+  //   200: Explicitly excluded individual tools (highest priority)
+
+  // MCP servers that are explicitly allowed in settings.mcp.allowed
+  // Priority: 85 (lower than trusted servers)
+  if (settings.mcp?.allowed) {
+    for (const serverName of settings.mcp.allowed) {
+      rules.push({
+        toolName: `${serverName}__*`,
+        decision: PolicyDecision.ALLOW,
+        priority: 85,
+      });
+    }
+  }
+
+  // MCP servers that are trusted in the settings.
+  // Priority: 90 (higher than general allowed servers but lower than explicit tool allows)
+  if (settings.mcpServers) {
+    for (const [serverName, serverConfig] of Object.entries(settings.mcpServers)) {
+      if (serverConfig.trust) {
+        // Trust all tools from this MCP server
+        // Using pattern matching for MCP tool names which are formatted as "serverName__toolName"
+        rules.push({
+          toolName: `${serverName}__*`,
+          decision: PolicyDecision.ALLOW,
+          priority: 90,
+        });
+      }
+    }
+  }
+
   // Tools that are explicitly allowed in the settings.
   // Priority: 100
   if (settings.tools?.allowed) {
     for (const tool of settings.tools.allowed) {
       rules.push({
         toolName: tool,
-        decision: PolicyDecision.ALLOW,
-        priority: 100,
-      });
-    }
-  }
-
-  // MCP servers that are explicitly allowed in the settings.
-  // Priority: 100
-  if (settings.mcp?.allowed) {
-    for (const server of settings.mcp.allowed) {
-      rules.push({
-        toolName: `^mcp://${server}/.*`,
         decision: PolicyDecision.ALLOW,
         priority: 100,
       });
@@ -79,14 +110,14 @@ export function createPolicyEngineConfig(
     }
   }
 
-  // MCP servers that are explicitly excluded in the settings.
-  // Priority: 200
+  // MCP servers that are explicitly excluded in settings.mcp.excluded
+  // Priority: 195 (high priority to block servers, but individual tools can override)
   if (settings.mcp?.excluded) {
-    for (const server of settings.mcp.excluded) {
+    for (const serverName of settings.mcp.excluded) {
       rules.push({
-        toolName: `^mcp://${server}/.*`,
+        toolName: `${serverName}__*`,
         decision: PolicyDecision.DENY,
-        priority: 200,
+        priority: 195,
       });
     }
   }
