@@ -15,8 +15,8 @@ export class ServiceAccountImpersonationProvider
   implements OAuthClientProvider
 {
   private readonly targetUrl: string | undefined;
-  private readonly targetSA: string;
-  private readonly IAPAudience: string; // OAuth Client Id
+  private readonly targetServiceAccount: string;
+  private readonly targetAudience: string; // OAuth Client Id
   private readonly auth: GoogleAuth;
 
   // Properties required by OAuthClientProvider, with no-op values
@@ -31,8 +31,6 @@ export class ServiceAccountImpersonationProvider
   private _clientInformation?: OAuthClientInformationFull;
 
   constructor(private readonly config: MCPServerConfig) {
-    // Otherwise, for standard Cloud Run/Cloud Functions, the audience is the
-    // URL of the service itself.
     this.targetUrl = this.config.httpUrl || this.config.url;
     if (!this.targetUrl) {
       throw new Error(
@@ -40,12 +38,23 @@ export class ServiceAccountImpersonationProvider
       );
     }
 
+    if (!this.config.targetAudience) {
+      throw new Error(
+        'targetAudience must be provided for the Service Account Impersonation provider',
+      );
+    }
+
+    if (!this.config.targetServiceAccount) {
+      throw new Error(
+        'targetSA must be provided for the Service Account Impersonation provider',
+      );
+    }
+
     this.auth = new GoogleAuth();
 
-    // Used for IAP Audience
-    // TODO: Add these to MCPServerConfig
-    this.IAPAudience = '...';
-    this.targetSA = 'TARGET_SA';
+    // TODO remove and set defaults
+    this.targetAudience = this.config.targetAudience;
+    this.targetServiceAccount = this.config.targetServiceAccount;
   }
 
   clientInformation(): OAuthClientInformation | undefined {
@@ -62,13 +71,13 @@ export class ServiceAccountImpersonationProvider
     // `Authorization: Bearer <token>` header, which is the correct way to
     // present an ID token.
     const client = await this.auth.getClient();
-    const url = createIamApiUrl(this.targetSA);
+    const url = createIamApiUrl(this.targetServiceAccount);
 
     const res = await client.request<{ token: string }>({
       url,
       method: 'POST',
       data: {
-        audience: this.IAPAudience,
+        audience: this.targetAudience,
         includeEmail: true,
       },
     });

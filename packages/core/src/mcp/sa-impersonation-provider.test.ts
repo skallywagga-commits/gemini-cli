@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ServiceAccountImpersonationProvider } from './service-account-impersonation-provider.js';
+import { ServiceAccountImpersonationProvider } from './sa-impersonation-provider.js';
 import type { MCPServerConfig } from '../config/config.js';
 
 const mockRequest = vi.fn();
@@ -66,6 +66,7 @@ describe('ServiceAccountImpersonationProvider', () => {
     expect(tokens).toBeUndefined();
   });
 
+  // TODO: add SA & targetAudience
   it('should make a request with the correct parameters', async () => {
     const config: MCPServerConfig = {
       url: 'https://my-iap-service.run.app',

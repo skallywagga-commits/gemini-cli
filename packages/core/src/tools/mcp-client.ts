@@ -24,7 +24,7 @@ import { parse } from 'shell-quote';
 import type { Config, MCPServerConfig } from '../config/config.js';
 import { AuthProviderType } from '../config/config.js';
 import { GoogleCredentialProvider } from '../mcp/google-auth-provider.js';
-import { ServiceAccountImpersonationProvider } from '../mcp/service-account-impersonation-provider.js';
+import { ServiceAccountImpersonationProvider } from '../mcp/sa-impersonation-provider.js';
 import { DiscoveredMCPTool } from './mcp-tool.js';
 
 import type { FunctionDeclaration } from '@google/genai';
@@ -1241,7 +1241,7 @@ export async function createTransport(
   mcpServerConfig: MCPServerConfig,
   debugMode: boolean,
 ): Promise<Transport> {
-  if (mcpServerConfig.authProviderType === 'iap') {
+  if (mcpServerConfig.authProviderType === 'service_account_impersonation') {
     const provider = new ServiceAccountImpersonationProvider(mcpServerConfig);
     const transportOptions: SSEClientTransportOptions = {
       authProvider: provider,
@@ -1257,9 +1257,12 @@ export async function createTransport(
         new URL(targetUrl),
         transportOptions,
       );
-    }
+    } else if (mcpServerConfig.url) {
     // Default to SSE if only url is provided
     return new SSEClientTransport(new URL(targetUrl), transportOptions);
+    } else {
+      throw new Error('No URL configured for ServiceAccountImpersonation MCP Server');
+    }
   }
 
   if (
@@ -1282,9 +1285,7 @@ export async function createTransport(
         transportOptions,
       );
     }
-    throw new Error(
-      'No URL configured for Google Credentials or IAP MCP server',
-    );
+    throw new Error('No URL configured for Google Credentials MCP server');
   }
 
   // Check if we have OAuth configuration or stored tokens
