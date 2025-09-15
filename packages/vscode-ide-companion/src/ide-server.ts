@@ -130,15 +130,13 @@ export class IDEServer {
         }),
       );
 
-      app.use(
-        (err: Error, req: Request, res: Response, next: NextFunction) => {
-          if (err.message.includes('CORS')) {
-            res.status(403).json({ error: 'Request denied by CORS policy.' });
-          } else {
-            next(err);
-          }
-        },
-      );
+      app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+        if (err.message.includes('CORS')) {
+          res.status(403).json({ error: 'Request denied by CORS policy.' });
+        } else {
+          next(err);
+        }
+      });
 
       app.use((req, res, next) => {
         const host = req.headers.host || '';
@@ -288,9 +286,7 @@ export class IDEServer {
             os.tmpdir(),
             `gemini-ide-server-${process.ppid}.json`,
           );
-          this.log(
-            `IDE server listening on http://127.0.0.1:${this.port}`,
-          );
+          this.log(`IDE server listening on http://127.0.0.1:${this.port}`);
 
           await writePortAndWorkspace(
             context,

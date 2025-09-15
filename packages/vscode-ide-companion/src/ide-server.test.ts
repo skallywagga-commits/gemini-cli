@@ -369,7 +369,9 @@ describe('IDEServer HTTP endpoints', () => {
     const replaceMock = mockContext.environmentVariableCollection.replace;
     port = vi
       .mocked(replaceMock)
-      .mock.calls.find((call) => call[0] === 'GEMINI_CLI_IDE_SERVER_PORT')?.[1]!;
+      .mock.calls.find(
+        (call) => call[0] === 'GEMINI_CLI_IDE_SERVER_PORT',
+      )?.[1]!;
   });
 
   afterEach(async () => {
