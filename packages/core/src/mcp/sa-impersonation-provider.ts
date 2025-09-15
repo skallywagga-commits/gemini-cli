@@ -34,27 +34,25 @@ export class ServiceAccountImpersonationProvider
     this.targetUrl = this.config.httpUrl || this.config.url;
     if (!this.targetUrl) {
       throw new Error(
-        'A url or httpUrl must be provided for the Google ID Token provider',
+        'A url or httpUrl must be provided for the Service Account Impersonation provider',
       );
     }
 
-    if (!this.config.targetAudience) {
+    if (!config.targetAudience) {
       throw new Error(
         'targetAudience must be provided for the Service Account Impersonation provider',
       );
     }
+    this.targetAudience = config.targetAudience;
 
-    if (!this.config.targetServiceAccount) {
+    if (!config.targetServiceAccount) {
       throw new Error(
-        'targetSA must be provided for the Service Account Impersonation provider',
+        'targetServiceAccount must be provided for the Service Account Impersonation provider',
       );
     }
+    this.targetServiceAccount = config.targetServiceAccount;
 
     this.auth = new GoogleAuth();
-
-    // TODO remove and set defaults
-    this.targetAudience = this.config.targetAudience;
-    this.targetServiceAccount = this.config.targetServiceAccount;
   }
 
   clientInformation(): OAuthClientInformation | undefined {

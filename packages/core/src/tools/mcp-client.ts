@@ -441,6 +441,7 @@ async function createTransportWithOAuth(
  * @param toolRegistry The central registry where discovered tools will be registered.
  * @returns A promise that resolves when the discovery process has been attempted for all servers.
  */
+
 export async function discoverMcpTools(
   mcpServers: Record<string, MCPServerConfig>,
   mcpServerCommand: string | undefined,
@@ -1259,11 +1260,10 @@ export async function createTransport(
     } else if (mcpServerConfig.url) {
       // Default to SSE if only url is provided
       return new SSEClientTransport(new URL(targetUrl), transportOptions);
-    } else {
-      throw new Error(
-        'No URL configured for ServiceAccountImpersonation MCP Server',
-      );
     }
+    throw new Error(
+      'No URL configured for ServiceAccountImpersonation MCP Server',
+    );
   }
 
   if (
