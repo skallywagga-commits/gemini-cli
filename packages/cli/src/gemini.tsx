@@ -182,7 +182,7 @@ export async function startInteractiveUI(
         <AppWrapper />
       </React.StrictMode>
     ) : (
-        <AppWrapper />
+      <AppWrapper />
     ),
     {
       exitOnCtrlC: false,
