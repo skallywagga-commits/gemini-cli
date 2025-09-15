@@ -19,7 +19,6 @@ import {
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { simpleGit } from 'simple-git';
 import { SettingScope, loadSettings } from '../config/settings.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { recursivelyHydrateStrings } from './extensions/variables.js';
@@ -27,6 +26,11 @@ import { isWorkspaceTrusted } from './trustedFolders.js';
 import { resolveEnvVarsInObject } from '../utils/envVarResolver.js';
 import { randomUUID } from 'node:crypto';
 import { ExtensionUpdateState } from '../ui/state/extensions.js';
+import {
+  cloneFromGit,
+  checkForExtensionUpdate,
+  downloadFromGitHubRelease,
+} from './git.js';
 
 export const EXTENSIONS_DIRECTORY_NAME = path.join(GEMINI_DIR, 'extensions');
 
@@ -356,43 +360,6 @@ export function annotateActiveExtensions(
 }
 
 /**
- * Clones a Git repository to a specified local path.
- * @param installMetadata The metadata for the extension to install.
- * @param destination The destination path to clone the repository to.
- */
-async function cloneFromGit(
-  installMetadata: ExtensionInstallMetadata,
-  destination: string,
-): Promise<void> {
-  try {
-    const git = simpleGit(destination);
-    await git.clone(installMetadata.source, './', ['--depth', '1']);
-
-    const remotes = await git.getRemotes(true);
-    if (remotes.length === 0) {
-      throw new Error(
-        `Unable to find any remotes for repo ${installMetadata.source}`,
-      );
-    }
-
-    const refToFetch = installMetadata.ref || 'HEAD';
-
-    await git.fetch(remotes[0].name, refToFetch);
-
-    // After fetching, checkout FETCH_HEAD to get the content of the fetched ref.
-    // This results in a detached HEAD state, which is fine for this purpose.
-    await git.checkout('FETCH_HEAD');
-  } catch (error) {
-    throw new Error(
-      `Failed to clone Git repository from ${installMetadata.source}`,
-      {
-        cause: error,
-      },
-    );
-  }
-}
-
-/**
  * Asks users a prompt and awaits for a y/n response
  * @param prompt A yes/no prompt to ask the user
  * @returns Whether or not the user answers 'y' (yes)
@@ -442,7 +409,12 @@ export async function installExtension(
 
     if (installMetadata.type === 'git') {
       tempDir = await ExtensionStorage.createTmpDir();
-      await cloneFromGit(installMetadata, tempDir);
+      try {
+        await downloadFromGitHubRelease(installMetadata, tempDir);
+      } catch (error) {
+        console.log(error);
+        await cloneFromGit(installMetadata, tempDir);
+      }
       localSourcePath = tempDir;
     } else if (
       installMetadata.type === 'local' ||
@@ -790,57 +762,4 @@ export async function checkForAllExtensionUpdates(
   }
   setExtensionsUpdateState(finalState);
   return finalState;
-}
-
-export async function checkForExtensionUpdate(
-  extension: GeminiCLIExtension,
-): Promise<ExtensionUpdateState> {
-  if (extension.type !== 'git') {
-    return ExtensionUpdateState.NOT_UPDATABLE;
-  }
-
-  try {
-    const git = simpleGit(extension.path);
-    const remotes = await git.getRemotes(true);
-    if (remotes.length === 0) {
-      console.error('No git remotes found.');
-      return ExtensionUpdateState.ERROR;
-    }
-    const remoteUrl = remotes[0].refs.fetch;
-    if (!remoteUrl) {
-      console.error(`No fetch URL found for git remote ${remotes[0].name}.`);
-      return ExtensionUpdateState.ERROR;
-    }
-
-    // Determine the ref to check on the remote.
-    const refToCheck = extension.ref || 'HEAD';
-
-    const lsRemoteOutput = await git.listRemote([remoteUrl, refToCheck]);
-
-    if (typeof lsRemoteOutput !== 'string' || lsRemoteOutput.trim() === '') {
-      console.error(`Git ref ${refToCheck} not found.`);
-      return ExtensionUpdateState.ERROR;
-    }
-
-    const remoteHash = lsRemoteOutput.split('\t')[0];
-    const localHash = await git.revparse(['HEAD']);
-
-    if (!remoteHash) {
-      console.error(
-        `Unable to parse hash from git ls-remote output "${lsRemoteOutput}"`,
-      );
-      return ExtensionUpdateState.ERROR;
-    } else if (remoteHash === localHash) {
-      return ExtensionUpdateState.UP_TO_DATE;
-    } else {
-      return ExtensionUpdateState.UPDATE_AVAILABLE;
-    }
-  } catch (error) {
-    console.error(
-      `Failed to check for updates for extension "${
-        extension.name
-      }": ${getErrorMessage(error)}`,
-    );
-    return ExtensionUpdateState.ERROR;
-  }
 }
