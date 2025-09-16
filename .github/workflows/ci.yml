@@ -233,7 +233,7 @@ jobs:
           fi
 
       - name: 'Install shellcheck problem matcher'
-        run: |- 
+        run: |-
           mkdir -p "${RUNNER_TEMP}/shellcheck"
           cat > "${RUNNER_TEMP}/shellcheck/problem-matcher-lint-shell.json" <<"EOF"
           {
