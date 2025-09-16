@@ -58,25 +58,25 @@ vi.mock('./open-files-manager', () => {
   return { OpenFilesManager };
 });
 
+const getPortFromMock = (
+  replaceMock: ReturnType<
+    () => vscode.ExtensionContext['environmentVariableCollection']['replace']
+  >,
+) => {
+  const port = vi
+    .mocked(replaceMock)
+    .mock.calls.find((call) => call[0] === 'GEMINI_CLI_IDE_SERVER_PORT')?.[1];
+
+  if (port === undefined) {
+    expect.fail('Port was not set');
+  }
+  return port;
+};
+
 describe('IDEServer', () => {
   let ideServer: IDEServer;
   let mockContext: vscode.ExtensionContext;
   let mockLog: (message: string) => void;
-
-  const getPortFromMock = (
-    replaceMock: ReturnType<
-      () => vscode.ExtensionContext['environmentVariableCollection']['replace']
-    >,
-  ) => {
-    const port = vi
-      .mocked(replaceMock)
-      .mock.calls.find((call) => call[0] === 'GEMINI_CLI_IDE_SERVER_PORT')?.[1];
-
-    if (port === undefined) {
-      expect.fail('Port was not set');
-    }
-    return port;
-  };
 
   beforeEach(() => {
     mockLog = vi.fn();
@@ -367,11 +367,7 @@ describe('IDEServer HTTP endpoints', () => {
     } as unknown as vscode.ExtensionContext;
     await ideServer.start(mockContext);
     const replaceMock = mockContext.environmentVariableCollection.replace;
-    port = vi
-      .mocked(replaceMock)
-      .mock.calls.find(
-        (call) => call[0] === 'GEMINI_CLI_IDE_SERVER_PORT',
-      )?.[1]!;
+    port = getPortFromMock(replaceMock);
   });
 
   afterEach(async () => {

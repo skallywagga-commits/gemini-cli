@@ -28,6 +28,13 @@ import type { z } from 'zod';
 import type { DiffManager } from './diff-manager.js';
 import { OpenFilesManager } from './open-files-manager.js';
 
+class CORSError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CORSError';
+  }
+}
+
 const MCP_SESSION_ID_HEADER = 'mcp-session-id';
 const IDE_SERVER_PORT_ENV_VAR = 'GEMINI_CLI_IDE_SERVER_PORT';
 const IDE_WORKSPACE_PATH_ENV_VAR = 'GEMINI_CLI_IDE_WORKSPACE_PATH';
@@ -125,18 +132,13 @@ export class IDEServer {
             if (!origin) {
               return callback(null, true);
             }
-            return callback(new Error('Request denied by CORS policy.'));
+            return callback(
+              new CORSError('Request denied by CORS policy.'),
+              false,
+            );
           },
         }),
       );
-
-      app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-        if (err.message.includes('CORS')) {
-          res.status(403).json({ error: 'Request denied by CORS policy.' });
-        } else {
-          next(err);
-        }
-      });
 
       app.use((req, res, next) => {
         const host = req.headers.host || '';
@@ -273,6 +275,14 @@ export class IDEServer {
       };
 
       app.get('/mcp', handleSessionRequest);
+
+      app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+        if (err instanceof CORSError) {
+          res.status(403).json({ error: 'Request denied by CORS policy.' });
+        } else {
+          next(err);
+        }
+      });
 
       this.server = app.listen(0, '127.0.0.1', async () => {
         const address = (this.server as HTTPServer).address();
