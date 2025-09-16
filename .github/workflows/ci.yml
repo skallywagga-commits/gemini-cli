@@ -80,7 +80,7 @@ jobs:
         run: |-
           actionlint \
             -color \
-            -format "{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Filepath}}@{{$err.Line}} {{$err.Message}}%0A```%0A{{replace $err.Snippet "\n" "%0A"}}%0A```\n{{end}}" \
+            -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Filepath}}@{{$err.Line}} {{$err.Message}}%0A```%0A{{replace $err.Snippet "\n" "%0A"}}%0A```\n{{end}}' \
             -ignore 'SC2002:' \
             -ignore 'SC2016:' \
             -ignore 'SC2129:' \
@@ -252,7 +252,7 @@ jobs:
                 "owner": "lint_shell",
                 "pattern": [
                   {
-                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(?:fatal\\s+)?(warning|error):\\s+(.*)$",
+                    "regexp": "^(.*):(\d+):(\d+):\s+(?:fatal\s+)?(warning|error):\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
