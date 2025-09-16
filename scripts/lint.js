@@ -48,7 +48,7 @@ const platformArch = getPlatformArch();
  *   check: string;
  *   installer: string;
  *   run: string;
- * }} Linter
+ * }}
  */
 
 /**
@@ -92,7 +92,7 @@ const LINTERS = {
   },
   yamllint: {
     check: 'command -v yamllint',
-    installer: `pip3 install --user "yamllint==${YAMLLINT_VERSION}"`,
+    installer: `pip3 install --user "yamllint==${YAMLLINT_VERSION}"`, 
     run: "git ls-files | grep -E '\\.(yaml|yml)' | xargs yamllint --format github",
   },
 };
@@ -113,7 +113,7 @@ function runCommand(command, stdio = 'inherit') {
   }
 }
 
-function setupLinters() {
+export function setupLinters() {
   console.log('Setting up linters...');
   rmSync(TEMP_DIR, { recursive: true, force: true });
   mkdirSync(TEMP_DIR, { recursive: true });
@@ -124,7 +124,7 @@ function setupLinters() {
       console.log(`Installing ${linter}...`);
       if (!runCommand(installer)) {
         console.error(
-          `Failed to install ${linter}. Please install it manually.`,
+          `Failed to install ${linter}. Please install it manually.`, 
         );
         process.exit(1);
       }
@@ -133,31 +133,63 @@ function setupLinters() {
   console.log('All required linters are available.');
 }
 
-function runLinters() {
+export function runESLint() {
   console.log('\nRunning ESLint...');
   if (!runCommand('npm run lint:ci')) {
     process.exit(1);
   }
+}
 
+export function runActionlint() {
   console.log('\nRunning actionlint...');
   if (!runCommand(LINTERS.actionlint.run)) {
     process.exit(1);
   }
+}
 
+export function runShellcheck() {
   console.log('\nRunning shellcheck...');
   if (!runCommand(LINTERS.shellcheck.run)) {
     process.exit(1);
   }
+}
 
+export function runYamllint() {
   console.log('\nRunning yamllint...');
   if (!runCommand(LINTERS.yamllint.run)) {
     process.exit(1);
   }
-
-  console.log('\nAll linting checks passed!');
 }
 
+function main() {
+  const args = process.argv.slice(2);
 
+  if (args.length === 0) {
+    setupLinters();
+    runESLint();
+    runActionlint();
+    runShellcheck();
+    runYamllint();
+    console.log('\nAll linting checks passed!');
+    return;
+  }
 
-setupLinters();
-runLinters();
+  if (args.includes('--setup')) {
+    setupLinters();
+  }
+  if (args.includes('--eslint')) {
+    runESLint();
+  }
+  if (args.includes('--actionlint')) {
+    runActionlint();
+  }
+  if (args.includes('--shellcheck')) {
+    runShellcheck();
+  }
+  if (args.includes('--yamllint')) {
+    runYamllint();
+  }
+}
+
+main();
+

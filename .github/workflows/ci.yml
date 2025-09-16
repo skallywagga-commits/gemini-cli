@@ -46,8 +46,20 @@ jobs:
       - name: 'Install dependencies'
         run: 'npm ci'
 
-      - name: 'Run all linters'
-        run: 'npm run lint:all'
+      - name: 'Install linters'
+        run: 'node scripts/lint.js --setup'
+
+      - name: 'Run ESLint'
+        run: 'node scripts/lint.js --eslint'
+
+      - name: 'Run actionlint'
+        run: 'node scripts/lint.js --actionlint'
+
+      - name: 'Run shellcheck'
+        run: 'node scripts/lint.js --shellcheck'
+
+      - name: 'Run yamllint'
+        run: 'node scripts/lint.js --yamllint'
 
   test_linux:
     name: 'Test (Linux)'
