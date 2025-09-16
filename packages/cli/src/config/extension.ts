@@ -127,7 +127,9 @@ export async function performWorkspaceExtensionMigration(
 }
 
 function getClearcutConfig(cwd: string) {
+  const settings = loadSettings();
   return new Config({
+    telemetry: settings.merged.telemetry,
     sessionId: randomUUID(),
     targetDir: cwd,
     cwd,
