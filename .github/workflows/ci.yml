@@ -395,7 +395,7 @@ jobs:
     runs-on: 'gemini-cli-ubuntu-16-core'
     needs: 'ci'
     if: |-
-      ${{ always() && github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name == github.repository) }}
+      ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name == github.repository) }}
     continue-on-error: true
     permissions:
       contents: 'read' # For checkout
