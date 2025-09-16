@@ -80,7 +80,7 @@ jobs:
       - name: 'Run tests and generate reports'
         env:
           NO_COLOR: true
-        run: 'npm run test:ci'
+        run: 'npm run test:ci -- --coverage.enabled=false'
 
       - name: 'Publish Test Report (for non-forks)'
         if: |-
@@ -137,7 +137,7 @@ jobs:
       - name: 'Run tests and generate reports'
         env:
           NO_COLOR: true
-        run: 'npm run test:ci'
+        run: 'npm run test:ci -- --coverage.enabled=false'
 
       - name: 'Publish Test Report (for non-forks)'
         if: |-
