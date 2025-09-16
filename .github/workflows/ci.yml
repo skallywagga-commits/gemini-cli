@@ -19,9 +19,8 @@ concurrency:
 
 permissions:
   checks: 'write'
-  contents: 'write'
+  contents: 'read'
   statuses: 'write'
-  workflows: 'write'
 
 defaults:
   run:
@@ -100,6 +99,8 @@ jobs:
   lint_js_format:
     name: 'Lint (JS Format)'
     runs-on: 'gemini-cli-ubuntu-16-core'
+    permissions:
+      contents: 'write'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
@@ -130,9 +131,11 @@ jobs:
           git add -A
           if git diff --staged --quiet; then
             echo "No changes to commit."
-          else
+          elif git diff --staged --name-only | grep -q -v -e '^\.github/'; then
             git commit -m "style(auto): format code with prettier"
             git push
+          else
+            echo "Formatting changes are only in the .github directory. Skipping push."
           fi
 
       - name: 'Verify no outstanding formatting changes'
@@ -144,6 +147,8 @@ jobs:
   lint_js_lint:
     name: 'Lint (JS Lint)'
     runs-on: 'gemini-cli-ubuntu-16-core'
+    permissions:
+      contents: 'write'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
@@ -172,9 +177,11 @@ jobs:
           git add -A
           if git diff --staged --quiet; then
             echo "No changes to commit."
-          else
+          elif git diff --staged --name-only | grep -q -v -e '^\.github/'; then
             git commit -m "style(auto): fix linting issues"
             git push
+          else
+            echo "Linting changes are only in the .github directory. Skipping push."
           fi
 
       - name: 'Verify no outstanding linting issues'
@@ -249,7 +256,7 @@ jobs:
                 "owner": "lint_shell",
                 "pattern": [
                   {
-                    "regexp": "^(.*):(\d+):(\d+):\s+(?:fatal\s+)?(warning|error):\s+(.*)$",
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(?:fatal\\s+)?(warning|error):\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
