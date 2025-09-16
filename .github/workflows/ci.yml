@@ -332,7 +332,6 @@ jobs:
       checks: 'write'
       pull-requests: 'write'
     strategy:
-      fail-fast: false # So we can see all test failures
       matrix:
         os:
           - 'macos-latest'
