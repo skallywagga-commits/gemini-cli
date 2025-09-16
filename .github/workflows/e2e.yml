@@ -15,8 +15,39 @@ on:
   merge_group:
 
 jobs:
+  build:
+    name: 'Build Project'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+
+      - name: 'Set up Node.js'
+        uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: 'Install dependencies'
+        run: 'npm ci'
+
+      - name: 'Build project'
+        run: 'npm run build'
+
+      - name: 'Upload build artifacts'
+        uses: 'actions/upload-artifact@v4'
+        with:
+          name: 'build-artifacts'
+          path: |
+            dist/
+            node_modules/
+            packages/
+            package.json
+            npm-shrinkwrap.json
+
   e2e-test:
     name: 'E2E Test (${{ matrix.os }}) - ${{ matrix.sandbox }}'
+    needs: build
     # This condition ensures the job runs for pushes to main, merge groups,
     # PRs from the base repo, OR PRs from forks with the correct label.
     if: |
@@ -29,7 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - 'ubuntu-latest'
+          - 'ubuntu-latest-8-cores'
           - 'macos-latest'
           - 'gemini-cli-windows-16-core'
         sandbox:
@@ -56,22 +87,20 @@ jobs:
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
         if: "github.event_name != 'pull_request_target'"
 
+      - name: 'Download build artifacts'
+        uses: 'actions/download-artifact@v4'
+        with:
+          name: 'build-artifacts'
+          path: '.'
+
       - name: 'Set up Node.js ${{ matrix.node-version }}'
         uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions-node@v4
         with:
           node-version: '${{ matrix.node-version }}'
 
-      - name: 'Install dependencies'
-        run: |-
-          npm ci
-
-      - name: 'Build project'
-        run: |-
-          npm run build
-
       - name: 'Set up Docker'
         if: |-
-          matrix.os == 'ubuntu-latest' && matrix.sandbox == 'sandbox:docker'
+          matrix.os == 'ubuntu-latest-8-cores' && matrix.sandbox == 'sandbox:docker'
         uses: 'docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435' # ratchet:docker/setup-buildx-action@v3
 
       - name: 'Run E2E tests'

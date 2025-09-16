@@ -13,6 +13,6 @@ export default defineConfig({
     reporters: ['default'],
     include: ['**/*.test.ts'],
     retry: 2,
-    fileParallelism: false,
+    fileParallelism: true,
   },
 });
