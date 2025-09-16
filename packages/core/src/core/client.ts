@@ -579,7 +579,10 @@ export class GeminiClient {
 
     try {
       const userMemory = this.config.getUserMemory();
-      const systemInstruction = getCoreSystemPrompt(userMemory);
+      const systemInstruction = await getCoreSystemPrompt({
+        config: this.config,
+        userMemory,
+      });
       const requestConfig = {
         abortSignal,
         ...this.generateContentConfig,

@@ -18,6 +18,7 @@ import { WriteFileTool } from '../tools/write-file.js';
 import process from 'node:process';
 import { isGitRepository } from '../utils/gitUtils.js';
 import { MemoryTool, GEMINI_CONFIG_DIR } from '../tools/memoryTool.js';
+import type { Config } from '../config/config.js';
 
 export function resolvePathFromEnv(envVar?: string): {
   isSwitch: boolean;
@@ -69,8 +70,16 @@ export function resolvePathFromEnv(envVar?: string): {
   };
 }
 
-export function getCoreSystemPrompt(userMemory?: string): string {
+export async function getCoreSystemPrompt({
+  config,
+  userMemory,
+}: {
+  config: Config;
+  userMemory?: string;
+}): Promise<string> {
   // A flag to indicate whether the system prompt override is active.
+  const mcpServers = config.getMcpServers();
+
   let systemMdEnabled = false;
   // The default path for the system prompt file. This can be overridden.
   let systemMdPath = path.resolve(path.join(GEMINI_CONFIG_DIR, 'system.md'));

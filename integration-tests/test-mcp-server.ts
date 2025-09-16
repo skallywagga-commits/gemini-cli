@@ -22,7 +22,10 @@ export class TestMcpServer {
         name: 'test-mcp-server',
         version: '1.0.0',
       },
-      { capabilities: {} },
+      {
+        capabilities: {},
+        instructions: 'I am a test server',
+      },
     );
 
     const transport = new StreamableHTTPServerTransport({
