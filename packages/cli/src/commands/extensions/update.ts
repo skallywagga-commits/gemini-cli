@@ -6,14 +6,16 @@
 
 import type { CommandModule } from 'yargs';
 import {
-  updateAllUpdatableExtensions,
-  type ExtensionUpdateInfo,
   loadExtensions,
   annotateActiveExtensions,
+} from '../../config/extension.js';
+import {
+  updateAllUpdatableExtensions,
+  type ExtensionUpdateInfo,
   checkForAllExtensionUpdates,
   checkForExtensionUpdate,
   updateExtension,
-} from '../../config/extension.js';
+} from '../../config/extensions/update.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { ExtensionUpdateState } from '../../ui/state/extensions.js';
 

@@ -6,9 +6,9 @@
 
 import {
   updateAllUpdatableExtensions,
-  updateExtension,
   type ExtensionUpdateInfo,
-} from '../../config/extension.js';
+  updateExtension,
+} from '../../config/extensions/update.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { MessageType } from '../types.js';
 import {

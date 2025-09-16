@@ -13,7 +13,7 @@ import { MessageType } from '../types.js';
 import {
   checkForAllExtensionUpdates,
   updateExtension,
-} from '../../config/extension.js';
+} from '../../config/extensions/update.js';
 
 export const useExtensionUpdates = (
   extensions: GeminiCLIExtension[],
