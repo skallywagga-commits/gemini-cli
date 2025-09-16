@@ -10,6 +10,7 @@ on:
       - 'main'
       - 'release/**'
   merge_group:
+  workflow_dispatch:
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
@@ -310,9 +311,6 @@ jobs:
       - run: |-
           echo 'All linters finished!'
 
-  #
-  # Test: Node
-  #
   test:
     name: 'Test'
     runs-on: '${{ matrix.os == 'ubuntu-latest' && 'ubuntu-latest-8-cores' || matrix.os == 'windows-latest' && 'windows-latest-8-cores' || matrix.os }}'
