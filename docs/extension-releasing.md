@@ -14,8 +14,8 @@ Gemini CLI extensions can be distributed as pre-built binaries through GitHub Re
 
 To ensure Gemini CLI can automatically find the correct release asset for each platform, you should follow this naming convention. The CLI will search for assets in the following order:
 
-1.  **Platform and Architecture-Specific:** `{name}-{platform}-{arch}.{extension}`
-2.  **Platform-Specific:** `{name}-{platform}.{extension}`
+1.  **Platform and Architecture-Specific:** `{platform}.{arch}.{name}.{extension}`
+2.  **Platform-Specific:** `{platform}.{name}.{extension}`
 3.  **Generic:** If only one asset is provided, it will be used as a generic fallback.
 
 - `{name}`: The name of your extension.

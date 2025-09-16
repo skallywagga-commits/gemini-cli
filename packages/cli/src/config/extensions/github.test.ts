@@ -182,10 +182,10 @@ describe('git extension helpers', () => {
 
   describe('findReleaseAsset', () => {
     const assets = [
-      { name: 'extension-darwin-arm64.tar.gz', browser_download_url: 'url1' },
-      { name: 'extension-darwin-x64.tar.gz', browser_download_url: 'url2' },
-      { name: 'extension-linux-x64.tar.gz', browser_download_url: 'url3' },
-      { name: 'extension-win32-x64.tar.gz', browser_download_url: 'url4' },
+      { name: 'darwin.arm64.extension.tar.gz', browser_download_url: 'url1' },
+      { name: 'darwin.x64.extension.tar.gz', browser_download_url: 'url2' },
+      { name: 'linux.x64.extension.tar.gz', browser_download_url: 'url3' },
+      { name: 'win32.x64.extension.tar.gz', browser_download_url: 'url4' },
       { name: 'extension-generic.tar.gz', browser_download_url: 'url5' },
     ];
 

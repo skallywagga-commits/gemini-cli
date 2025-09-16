@@ -206,15 +206,21 @@ export function findReleaseAsset(assets: Asset[]): Asset | undefined {
   const platform = os.platform();
   const arch = os.arch();
 
+  const platformArchPrefix = `${platform}.${arch}.`;
+  const platformPrefix = `${platform}.`;
+
   // Check for platform + architecture specific asset
-  const platformArchAsset = assets.find(
-    (asset) => asset.name.includes(platform) && asset.name.includes(arch),
+  const platformArchAsset = assets.find((asset) =>
+    asset.name.toLowerCase().startsWith(platformArchPrefix),
   );
   if (platformArchAsset) {
     return platformArchAsset;
   }
+
   // Check for platform specific asset
-  const platformAsset = assets.find((asset) => asset.name.includes(platform));
+  const platformAsset = assets.find((asset) =>
+    asset.name.toLowerCase().startsWith(platformPrefix),
+  );
   if (platformAsset) {
     return platformAsset;
   }
@@ -222,9 +228,9 @@ export function findReleaseAsset(assets: Asset[]): Asset | undefined {
   // Check for generic asset if only one is available
   const genericAsset = assets.find(
     (asset) =>
-      !asset.name.includes('darwin') &&
-      !asset.name.includes('linux') &&
-      !asset.name.includes('win32'),
+      !asset.name.toLowerCase().includes('darwin') &&
+      !asset.name.toLowerCase().includes('linux') &&
+      !asset.name.toLowerCase().includes('win32'),
   );
   if (assets.length === 1) {
     return genericAsset;
