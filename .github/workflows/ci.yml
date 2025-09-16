@@ -68,6 +68,7 @@ jobs:
           if [ ! -f "${HOME}/.local/bin/actionlint" ]; then
             mkdir -p "${HOME}/.local/bin"
             curl -sSLo "${RUNNER_TEMP}/.actionlint.tgz" "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+            mkdir -p "${RUNNER_TEMP}/actionlint"
             tar -xzf "${RUNNER_TEMP}/.actionlint.tgz" -C "${RUNNER_TEMP}/actionlint"
             mv "${RUNNER_TEMP}/actionlint/actionlint" "${HOME}/.local/bin/actionlint"
             echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
