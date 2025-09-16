@@ -716,6 +716,11 @@ function mergeExcludeTools(
     for (const tool of extension.config.excludeTools || []) {
       allExcludeTools.add(tool);
     }
+    for(const mcpServerConfig of Object.values(extension.config.mcpServers || {})) {
+      for (const tool of mcpServerConfig.excludeTools || []) {
+        allExcludeTools.add(tool);
+      }
+    }
   }
   return [...allExcludeTools];
 }
