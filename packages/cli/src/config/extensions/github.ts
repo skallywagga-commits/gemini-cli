@@ -5,10 +5,9 @@
  */
 
 import { simpleGit } from 'simple-git';
-import { getErrorMessage } from '../utils/errors.js';
-import type { ExtensionInstallMetadata } from './extension.js';
-import type { GeminiCLIExtension } from '@google/gemini-cli-core';
-import { ExtensionUpdateState } from '../ui/state/extensions.js';
+import { getErrorMessage } from '../../utils/errors.js';
+import type { ExtensionInstallMetadata } from '../extension.js';
+import { ExtensionUpdateState } from '../../ui/state/extensions.js';
 import * as os from 'node:os';
 import * as https from 'node:https';
 import * as fs from 'node:fs';
@@ -53,53 +52,76 @@ export async function cloneFromGit(
 }
 
 export async function checkForExtensionUpdate(
-  extension: GeminiCLIExtension,
+  installMetadata: ExtensionInstallMetadata,
 ): Promise<ExtensionUpdateState> {
-  if (extension.type !== 'git') {
+  if (
+    installMetadata.type !== 'git' &&
+    installMetadata.type !== 'github-release'
+  ) {
     return ExtensionUpdateState.NOT_UPDATABLE;
   }
-
   try {
-    const git = simpleGit(extension.path);
-    const remotes = await git.getRemotes(true);
-    if (remotes.length === 0) {
-      console.error('No git remotes found.');
-      return ExtensionUpdateState.ERROR;
-    }
-    const remoteUrl = remotes[0].refs.fetch;
-    if (!remoteUrl) {
-      console.error(`No fetch URL found for git remote ${remotes[0].name}.`);
-      return ExtensionUpdateState.ERROR;
-    }
+    if (installMetadata.type === 'git') {
+      const git = simpleGit(installMetadata.source);
+      const remotes = await git.getRemotes(true);
+      if (remotes.length === 0) {
+        console.error('No git remotes found.');
+        return ExtensionUpdateState.ERROR;
+      }
+      const remoteUrl = remotes[0].refs.fetch;
+      if (!remoteUrl) {
+        console.error(`No fetch URL found for git remote ${remotes[0].name}.`);
+        return ExtensionUpdateState.ERROR;
+      }
 
-    // Determine the ref to check on the remote.
-    const refToCheck = extension.ref || 'HEAD';
+      // Determine the ref to check on the remote.
+      const refToCheck = installMetadata.ref || 'HEAD';
 
-    const lsRemoteOutput = await git.listRemote([remoteUrl, refToCheck]);
+      const lsRemoteOutput = await git.listRemote([remoteUrl, refToCheck]);
 
-    if (typeof lsRemoteOutput !== 'string' || lsRemoteOutput.trim() === '') {
-      console.error(`Git ref ${refToCheck} not found.`);
-      return ExtensionUpdateState.ERROR;
-    }
+      if (typeof lsRemoteOutput !== 'string' || lsRemoteOutput.trim() === '') {
+        console.error(`Git ref ${refToCheck} not found.`);
+        return ExtensionUpdateState.ERROR;
+      }
 
-    const remoteHash = lsRemoteOutput.split('\t')[0];
-    const localHash = await git.revparse(['HEAD']);
+      const remoteHash = lsRemoteOutput.split('\t')[0];
+      const localHash = await git.revparse(['HEAD']);
 
-    if (!remoteHash) {
-      console.error(
-        `Unable to parse hash from git ls-remote output "${lsRemoteOutput}"`,
-      );
-      return ExtensionUpdateState.ERROR;
-    } else if (remoteHash === localHash) {
-      return ExtensionUpdateState.UP_TO_DATE;
+      if (!remoteHash) {
+        console.error(
+          `Unable to parse hash from git ls-remote output "${lsRemoteOutput}"`,
+        );
+        return ExtensionUpdateState.ERROR;
+      } else if (remoteHash === localHash) {
+        return ExtensionUpdateState.UP_TO_DATE;
+      } else {
+        return ExtensionUpdateState.UPDATE_AVAILABLE;
+      }
     } else {
-      return ExtensionUpdateState.UPDATE_AVAILABLE;
+      const { source, ref } = installMetadata;
+      if (!source) {
+        return ExtensionUpdateState.ERROR;
+      }
+      const parts = source.split('/');
+      const owner = parts.at(-2);
+      const repo = parts.at(-1)?.replace('.git', '');
+
+      if (!owner || !repo) {
+        throw new Error(`Invalid GitHub repository source: ${source}`);
+      }
+
+      const url = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+      const releaseData = await fetchJson(url);
+      console.log(releaseData.tag_name);
+      console.log(ref);
+      if (releaseData.tag_name !== ref) {
+        return ExtensionUpdateState.UPDATE_AVAILABLE;
+      }
+      return ExtensionUpdateState.UP_TO_DATE;
     }
   } catch (error) {
     console.error(
-      `Failed to check for updates for extension "${
-        extension.name
-      }": ${getErrorMessage(error)}`,
+      `Failed to check for updates for extension "${installMetadata.source}": ${getErrorMessage(error)}`,
     );
     return ExtensionUpdateState.ERROR;
   }
@@ -108,7 +130,7 @@ export async function checkForExtensionUpdate(
 export async function downloadFromGitHubRelease(
   installMetadata: ExtensionInstallMetadata,
   destination: string,
-): Promise<void> {
+): Promise<string> {
   const { source, ref } = installMetadata;
   const parts = source.split('/');
   const owner = parts.at(-2);
@@ -167,6 +189,7 @@ export async function downloadFromGitHubRelease(
     }
 
     await fs.promises.unlink(downloadedAssetPath);
+    return releaseData.tag_name;
   } catch (error) {
     throw new Error(
       `Failed to download release from ${url}: ${getErrorMessage(error)}`,
@@ -191,7 +214,7 @@ function findReleaseAsset(assets: Asset[]): Asset | undefined {
     return platformArchAsset;
   }
   // Check for platform specific asset
-  const platformAsset = assets.find((asset) => asset.name.includes('platform'));
+  const platformAsset = assets.find((asset) => asset.name.includes(platform));
   if (platformAsset) {
     return platformAsset;
   }
@@ -210,7 +233,9 @@ function findReleaseAsset(assets: Asset[]): Asset | undefined {
   return undefined;
 }
 
-async function fetchJson(url: string): Promise<{ assets: Asset[] }> {
+async function fetchJson(
+  url: string,
+): Promise<{ assets: Asset[]; tag_name: string }> {
   return new Promise((resolve, reject) => {
     https
       .get(url, { headers: { 'User-Agent': 'gemini-cli' } }, (res) => {
@@ -221,7 +246,9 @@ async function fetchJson(url: string): Promise<{ assets: Asset[] }> {
         }
         let data = '';
         res.on('data', (chunk) => (data += chunk));
-        res.on('end', () => resolve(JSON.parse(data) as { assets: Asset[] }));
+        res.on('end', () =>
+          resolve(JSON.parse(data) as { assets: Asset[]; tag_name: string }),
+        );
       })
       .on('error', reject);
   });
@@ -230,7 +257,7 @@ async function fetchJson(url: string): Promise<{ assets: Asset[] }> {
 async function downloadFile(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     https
-      .get(url, { headers: { 'User-Agent': 'gemini-cli' } }, (res) => {
+      .get(url, { headers: { 'User-agent': 'gemini-cli' } }, (res) => {
         if (res.statusCode === 302 || res.statusCode === 301) {
           downloadFile(res.headers.location!, dest).then(resolve).catch(reject);
           return;

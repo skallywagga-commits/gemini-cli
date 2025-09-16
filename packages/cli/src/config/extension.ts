@@ -30,7 +30,7 @@ import {
   cloneFromGit,
   checkForExtensionUpdate,
   downloadFromGitHubRelease,
-} from './git.js';
+} from './extensions/github.js';
 
 export const EXTENSIONS_DIRECTORY_NAME = path.join(GEMINI_DIR, 'extensions');
 
@@ -54,7 +54,7 @@ export interface ExtensionConfig {
 
 export interface ExtensionInstallMetadata {
   source: string;
-  type: 'git' | 'local' | 'link';
+  type: 'git' | 'local' | 'link' | 'github-release';
   ref?: string;
 }
 
@@ -309,9 +309,6 @@ export function annotateActiveExtensions(
       version: extension.config.version,
       isActive: !disabledExtensions.includes(extension.config.name),
       path: extension.path,
-      source: extension.installMetadata?.source,
-      type: extension.installMetadata?.type,
-      ref: extension.installMetadata?.ref,
     }));
   }
 
@@ -328,9 +325,6 @@ export function annotateActiveExtensions(
       version: extension.config.version,
       isActive: false,
       path: extension.path,
-      source: extension.installMetadata?.source,
-      type: extension.installMetadata?.type,
-      ref: extension.installMetadata?.ref,
     }));
   }
 
@@ -407,13 +401,21 @@ export async function installExtension(
 
     let tempDir: string | undefined;
 
-    if (installMetadata.type === 'git') {
+    if (
+      installMetadata.type === 'git' ||
+      installMetadata.type === 'github-release'
+    ) {
       tempDir = await ExtensionStorage.createTmpDir();
       try {
-        await downloadFromGitHubRelease(installMetadata, tempDir);
-      } catch (error) {
-        console.log(error);
+        const tagName = await downloadFromGitHubRelease(
+          installMetadata,
+          tempDir,
+        );
+        updateExtensionVersion(tempDir, tagName);
+        installMetadata.type = 'github-release';
+      } catch (_error) {
         await cloneFromGit(installMetadata, tempDir);
+        installMetadata.type = 'git';
       }
       localSourcePath = tempDir;
     } else if (
@@ -470,7 +472,11 @@ export async function installExtension(
 
       await fs.promises.mkdir(destinationPath, { recursive: true });
 
-      if (installMetadata.type === 'local' || installMetadata.type === 'git') {
+      if (
+        installMetadata.type === 'local' ||
+        installMetadata.type === 'git' ||
+        installMetadata.type === 'github-release'
+      ) {
         await copyExtension(localSourcePath, destinationPath);
       }
 
@@ -511,6 +517,22 @@ export async function installExtension(
       ),
     );
     throw error;
+  }
+}
+
+async function updateExtensionVersion(
+  extensionDir: string,
+  extensionVersion: string,
+) {
+  const configFilePath = path.join(extensionDir, EXTENSIONS_CONFIG_FILENAME);
+  if (fs.existsSync(configFilePath)) {
+    const configContent = await fs.promises.readFile(configFilePath, 'utf-8');
+    const config = JSON.parse(configContent);
+    config.version = extensionVersion;
+    await fs.promises.writeFile(
+      configFilePath,
+      JSON.stringify(config, null, 2),
+    );
   }
 }
 
@@ -618,13 +640,15 @@ export async function updateExtension(
   cwd: string = process.cwd(),
   setExtensionUpdateState: (updateState: ExtensionUpdateState) => void,
 ): Promise<ExtensionUpdateInfo> {
-  if (!extension.type) {
+  const installMetadata = loadInstallMetadata(extension.path);
+
+  if (!installMetadata?.type) {
     setExtensionUpdateState(ExtensionUpdateState.ERROR);
     throw new Error(
       `Extension ${extension.name} cannot be updated, type is unknown.`,
     );
   }
-  if (extension.type === 'link') {
+  if (installMetadata?.type === 'link') {
     setExtensionUpdateState(ExtensionUpdateState.UP_TO_DATE);
     throw new Error(`Extension is linked so does not need to be updated`);
   }
@@ -635,14 +659,7 @@ export async function updateExtension(
   try {
     await copyExtension(extension.path, tempDir);
     await uninstallExtension(extension.name, cwd);
-    await installExtension(
-      {
-        source: extension.source!,
-        type: extension.type,
-        ref: extension.ref,
-      },
-      cwd,
-    );
+    await installExtension(installMetadata, cwd);
 
     const updatedExtensionStorage = new ExtensionStorage(extension.name);
     const updatedExtension = loadExtension(
@@ -758,7 +775,15 @@ export async function checkForAllExtensionUpdates(
 ): Promise<Map<string, ExtensionUpdateState>> {
   const finalState = new Map<string, ExtensionUpdateState>();
   for (const extension of extensions) {
-    finalState.set(extension.name, await checkForExtensionUpdate(extension));
+    const installMetadata = loadInstallMetadata(extension.path);
+    if (!installMetadata) {
+      finalState.set(extension.name, ExtensionUpdateState.NOT_UPDATABLE);
+      continue;
+    }
+    finalState.set(
+      extension.name,
+      await checkForExtensionUpdate(installMetadata),
+    );
   }
   setExtensionsUpdateState(finalState);
   return finalState;

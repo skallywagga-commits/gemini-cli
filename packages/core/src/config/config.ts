@@ -116,9 +116,6 @@ export interface GeminiCLIExtension {
   version: string;
   isActive: boolean;
   path: string;
-  source?: string;
-  type?: 'git' | 'local' | 'link';
-  ref?: string;
 }
 
 export interface FileFilteringOptions {
