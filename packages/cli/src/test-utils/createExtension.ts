@@ -11,9 +11,7 @@ import {
   INSTALL_METADATA_FILENAME,
   type ExtensionInstallMetadata,
 } from '../config/extension.js';
-import {
-  type MCPServerConfig,
-} from '@google/gemini-cli-core';
+import { type MCPServerConfig } from '@google/gemini-cli-core';
 
 export function createExtension({
   extensionsDir = 'extensions-dir',

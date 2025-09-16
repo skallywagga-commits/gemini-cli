@@ -57,9 +57,9 @@ vi.mock('simple-git', () => ({
 }));
 
 vi.mock('os', async (importOriginal) => {
-  const os = await importOriginal<typeof os>();
+  const mockedOs = await importOriginal<typeof os>();
   return {
-    ...os,
+    ...mockedOs,
     homedir: vi.fn(),
   };
 });
