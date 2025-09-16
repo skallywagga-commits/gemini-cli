@@ -1103,8 +1103,12 @@ describe('updateExtension', () => {
       [],
       process.cwd(),
     )[0];
-    await updateExtension(extension, tempHomeDir,
-      ExtensionUpdateState.UPDATE_AVAILABLE,setExtensionUpdateState);
+    await updateExtension(
+      extension,
+      tempHomeDir,
+      ExtensionUpdateState.UPDATE_AVAILABLE,
+      setExtensionUpdateState,
+    );
 
     expect(setExtensionUpdateState).toHaveBeenCalledWith(
       ExtensionUpdateState.UPDATING,
