@@ -53,6 +53,7 @@ jobs:
             ~/.local/bin/actionlint
           key: '${{ runner.os }}-lint-tools-${{ env.SHELLCHECK_VERSION }}-${{ env.ACTIONLINT_VERSION }}'
 
+      - name: 'Install shellcheck' # Actionlint uses shellcheck
         run: |-
           if [ ! -f "${HOME}/.local/bin/shellcheck" ]; then
             mkdir -p "${HOME}/.local/bin"
