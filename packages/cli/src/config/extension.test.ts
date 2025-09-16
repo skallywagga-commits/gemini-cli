@@ -22,14 +22,11 @@ import {
   performWorkspaceExtensionMigration,
   uninstallExtension,
   updateExtension,
-  useExtensionUpdates,
   type Extension,
-  type ExtensionInstallMetadata,
 } from './extension.js';
 import {
   GEMINI_DIR,
   type GeminiCLIExtension,
-  type MCPServerConfig,
   ClearcutLogger,
   type Config,
   ExtensionUninstallEvent,
@@ -38,8 +35,7 @@ import { execSync } from 'node:child_process';
 import { SettingScope, loadSettings } from './settings.js';
 import { isWorkspaceTrusted } from './trustedFolders.js';
 import { ExtensionUpdateState } from '../ui/state/extensions.js';
-import { renderHook, waitFor } from '@testing-library/react';
-import { MessageType } from '../ui/types.js';
+import { createExtension } from '../test-utils/createExtension.js';
 
 const mockGit = {
   clone: vi.fn(),
@@ -967,39 +963,6 @@ describe('performWorkspaceExtensionMigration', () => {
   });
 });
 
-function createExtension({
-  extensionsDir = 'extensions-dir',
-  name = 'my-extension',
-  version = '1.0.0',
-  addContextFile = false,
-  contextFileName = undefined as string | undefined,
-  mcpServers = {} as Record<string, MCPServerConfig>,
-  installMetadata = undefined as ExtensionInstallMetadata | undefined,
-} = {}): string {
-  const extDir = path.join(extensionsDir, name);
-  fs.mkdirSync(extDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(extDir, EXTENSIONS_CONFIG_FILENAME),
-    JSON.stringify({ name, version, contextFileName, mcpServers }),
-  );
-
-  if (addContextFile) {
-    fs.writeFileSync(path.join(extDir, 'GEMINI.md'), 'context');
-  }
-
-  if (contextFileName) {
-    fs.writeFileSync(path.join(extDir, contextFileName), 'context');
-  }
-
-  if (installMetadata) {
-    fs.writeFileSync(
-      path.join(extDir, INSTALL_METADATA_FILENAME),
-      JSON.stringify(installMetadata),
-    );
-  }
-  return extDir;
-}
-
 describe('updateExtension', () => {
   let tempHomeDir: string;
   let userExtensionsDir: string;
@@ -1566,124 +1529,6 @@ describe('extension', () => {
 
       expect(setExtensionUpdateState).toHaveBeenCalledWith(
         ExtensionUpdateState.ERROR,
-      );
-    });
-  });
-
-  describe('useExtensionUpdates', () => {
-    let tempHomeDir: string;
-    let userExtensionsDir: string;
-
-    beforeEach(() => {
-      tempHomeDir = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'gemini-cli-test-home-'),
-      );
-      vi.mocked(os.homedir).mockReturnValue(tempHomeDir);
-      userExtensionsDir = path.join(tempHomeDir, GEMINI_DIR, 'extensions');
-      fs.mkdirSync(userExtensionsDir, { recursive: true });
-      Object.values(mockGit).forEach((fn) => fn.mockReset());
-    });
-
-    afterEach(() => {
-      fs.rmSync(tempHomeDir, { recursive: true, force: true });
-    });
-
-    it('should check for updates and log a message if an update is available', async () => {
-      const extensions = [
-        {
-          name: 'test-extension',
-          type: 'git',
-          autoUpdate: false,
-        },
-      ];
-      const addItem = vi.fn();
-      const cwd = '/test/cwd';
-
-      mockGit.getRemotes.mockResolvedValue([
-        {
-          name: 'origin',
-          refs: {
-            fetch: 'https://github.com/google/gemini-cli.git',
-          },
-        },
-      ]);
-      mockGit.revparse.mockResolvedValue('local-hash');
-      mockGit.listRemote.mockResolvedValue('remote-hash\tHEAD');
-
-      renderHook(() =>
-        useExtensionUpdates(extensions as GeminiCLIExtension[], addItem, cwd),
-      );
-
-      await waitFor(() => {
-        expect(addItem).toHaveBeenCalledWith(
-          {
-            type: MessageType.INFO,
-            text: 'Extension test-extension has an update available, run "/extensions update test-extension" to install it.',
-          },
-          expect.any(Number),
-        );
-      });
-    });
-
-    it('should check for updates and automatically update if autoUpdate is true', async () => {
-      const extensionDir = createExtension({
-        extensionsDir: userExtensionsDir,
-        name: 'test-extension',
-        version: '1.0.0',
-        installMetadata: {
-          source: 'https://some.git/repo',
-          type: 'git',
-        },
-      });
-      const settingsDir = path.join(tempHomeDir, GEMINI_DIR);
-      fs.mkdirSync(settingsDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(settingsDir, 'settings.json'),
-        JSON.stringify({
-          extensions: { autoUpdate: { 'test-extension': true } },
-        }),
-      );
-      const extension = annotateActiveExtensions(
-        [loadExtension(extensionDir)!],
-        [],
-        tempHomeDir,
-      )[0];
-
-      const addItem = vi.fn();
-      mockGit.getRemotes.mockResolvedValue([
-        {
-          name: 'origin',
-          refs: {
-            fetch: 'https://github.com/google/gemini-cli.git',
-          },
-        },
-      ]);
-      mockGit.revparse.mockResolvedValue('local-hash');
-      mockGit.listRemote.mockResolvedValue('remote-hash\tHEAD');
-      mockGit.clone.mockImplementation(async (_, destination) => {
-        fs.mkdirSync(path.join(mockGit.path(), destination), {
-          recursive: true,
-        });
-        fs.writeFileSync(
-          path.join(mockGit.path(), destination, EXTENSIONS_CONFIG_FILENAME),
-          JSON.stringify({ name: 'test-extension', version: '1.1.0' }),
-        );
-      });
-      vi.mocked(isWorkspaceTrusted).mockReturnValue(true);
-
-      renderHook(() => useExtensionUpdates([extension], addItem, tempHomeDir));
-
-      await waitFor(
-        () => {
-          expect(addItem).toHaveBeenCalledWith(
-            {
-              type: MessageType.INFO,
-              text: 'Extension "test-extension" successfully updated: 1.0.0 → 1.1.0.',
-            },
-            expect.any(Number),
-          );
-        },
-        { timeout: 2000 },
       );
     });
   });

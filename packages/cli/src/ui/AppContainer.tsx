@@ -83,7 +83,7 @@ import { useAutoAcceptIndicator } from './hooks/useAutoAcceptIndicator.js';
 import { useWorkspaceMigration } from './hooks/useWorkspaceMigration.js';
 import { useSessionStats } from './contexts/SessionContext.js';
 import { useGitBranchName } from './hooks/useGitBranchName.js';
-import { useExtensionUpdates } from '../config/extension.js';
+import { useExtensionUpdates } from './hooks/useExtensionUpdates.js';
 
 const CTRL_EXIT_PROMPT_DURATION_MS = 1000;
 

@@ -27,9 +27,7 @@ import { isWorkspaceTrusted } from './trustedFolders.js';
 import { resolveEnvVarsInObject } from '../utils/envVarResolver.js';
 import { randomUUID } from 'node:crypto';
 import { ExtensionUpdateState } from '../ui/state/extensions.js';
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import type { UseHistoryManagerReturn } from '../ui/hooks/useHistoryManager.js';
-import { MessageType } from '../ui/types.js';
+import { type Dispatch, type SetStateAction } from 'react';
 
 export const EXTENSIONS_DIRECTORY_NAME = path.join(GEMINI_DIR, 'extensions');
 
@@ -884,72 +882,3 @@ export async function checkForExtensionUpdate(
     return;
   }
 }
-
-export const useExtensionUpdates = (
-  extensions: GeminiCLIExtension[],
-  addItem: UseHistoryManagerReturn['addItem'],
-  cwd: string,
-) => {
-  const [extensionsUpdateState, setExtensionsUpdateState] = useState(
-    new Map<string, ExtensionUpdateState>(),
-  );
-  useMemo(async () => {
-    const updateState = await checkForAllExtensionUpdates(
-      extensions,
-      extensionsUpdateState,
-      setExtensionsUpdateState,
-    );
-    for (const extension of extensions) {
-      const prevState = extensionsUpdateState.get(extension.name);
-      const currentState = updateState.get(extension.name);
-      if (
-        prevState === currentState ||
-        currentState !== ExtensionUpdateState.UPDATE_AVAILABLE
-      ) {
-        continue;
-      }
-      if (extension.autoUpdate) {
-        updateExtension(extension, cwd, currentState, (newState) => {
-          setExtensionsUpdateState((prev) => {
-            const finalState = new Map(prev);
-            finalState.set(extension.name, newState);
-            return finalState;
-          });
-        })
-          .then((result) => {
-            if (!result) return;
-            addItem(
-              {
-                type: MessageType.INFO,
-                text: `Extension "${extension.name}" successfully updated: ${result.originalVersion} → ${result.updatedVersion}.`,
-              },
-              Date.now(),
-            );
-          })
-          .catch((error) => {
-            console.error(
-              `Error updating extension "${extension.name}": ${getErrorMessage(error)}.`,
-            );
-          });
-      } else {
-        addItem(
-          {
-            type: MessageType.INFO,
-            text: `Extension ${extension.name} has an update available, run "/extensions update ${extension.name}" to install it.`,
-          },
-          Date.now(),
-        );
-      }
-    }
-  }, [
-    extensions,
-    extensionsUpdateState,
-    setExtensionsUpdateState,
-    addItem,
-    cwd,
-  ]);
-  return {
-    extensionsUpdateState,
-    setExtensionsUpdateState,
-  };
-};
