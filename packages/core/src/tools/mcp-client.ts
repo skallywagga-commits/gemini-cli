@@ -1241,25 +1241,28 @@ export async function createTransport(
   mcpServerConfig: MCPServerConfig,
   debugMode: boolean,
 ): Promise<Transport> {
-  if (mcpServerConfig.authProviderType === 'service_account_impersonation') {
+  if (
+    mcpServerConfig.authProviderType ===
+    AuthProviderType.SERVICE_ACCOUNT_IMPERSONATION
+  ) {
     const provider = new ServiceAccountImpersonationProvider(mcpServerConfig);
-    const transportOptions: SSEClientTransportOptions = {
+    const transportOptions:
+      | StreamableHTTPClientTransportOptions
+      | SSEClientTransportOptions = {
       authProvider: provider,
     };
 
-    const targetUrl = mcpServerConfig.httpUrl || mcpServerConfig.url;
-    if (!targetUrl) {
-      throw new Error('No url or httpUrl found in IAP server config');
-    }
-
     if (mcpServerConfig.httpUrl) {
       return new StreamableHTTPClientTransport(
-        new URL(targetUrl),
+        new URL(mcpServerConfig.httpUrl),
         transportOptions,
       );
     } else if (mcpServerConfig.url) {
       // Default to SSE if only url is provided
-      return new SSEClientTransport(new URL(targetUrl), transportOptions);
+      return new SSEClientTransport(
+        new URL(mcpServerConfig.url),
+        transportOptions,
+      );
     }
     throw new Error(
       'No URL configured for ServiceAccountImpersonation MCP Server',

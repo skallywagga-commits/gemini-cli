@@ -14,13 +14,13 @@ import { GoogleAuth } from 'google-auth-library';
 import type { MCPServerConfig } from '../config/config.js';
 import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
 
-const createIamApiUrl = (targetSA: string) =>
-  `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${encodeURIComponent(targetSA)}:generateIdToken`;
+function createIamApiUrl(targetSA: string): string {
+  return `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${encodeURIComponent(targetSA)}:generateIdToken`;
+}
 
 export class ServiceAccountImpersonationProvider
   implements OAuthClientProvider
 {
-  private readonly targetUrl: string | undefined;
   private readonly targetServiceAccount: string;
   private readonly targetAudience: string; // OAuth Client Id
   private readonly auth: GoogleAuth;
@@ -37,8 +37,8 @@ export class ServiceAccountImpersonationProvider
   private _clientInformation?: OAuthClientInformationFull;
 
   constructor(private readonly config: MCPServerConfig) {
-    this.targetUrl = this.config.httpUrl || this.config.url;
-    if (!this.targetUrl) {
+    // This check is done in mcp-client.ts. This is just an additional check.
+    if (!this.config.httpUrl && !this.config.url) {
       throw new Error(
         'A url or httpUrl must be provided for the Service Account Impersonation provider',
       );

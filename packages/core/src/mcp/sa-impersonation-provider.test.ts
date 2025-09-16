@@ -63,12 +63,10 @@ describe('ServiceAccountImpersonationProvider', () => {
   });
 
   it('should correctly get tokens for a valid config', async () => {
-    const validConfig: MCPServerConfig = defaultSAConfig;
-
     const mockToken = 'mock-id-token-123';
     mockRequest.mockResolvedValue({ data: { token: mockToken } });
 
-    const provider = new ServiceAccountImpersonationProvider(validConfig);
+    const provider = new ServiceAccountImpersonationProvider(defaultSAConfig);
     const tokens = await provider.tokens();
 
     expect(tokens).toBeDefined();
@@ -77,22 +75,18 @@ describe('ServiceAccountImpersonationProvider', () => {
   });
 
   it('should return undefined if token acquisition fails', async () => {
-    const validConfig: MCPServerConfig = defaultSAConfig;
-
     mockRequest.mockResolvedValue({ data: { token: null } });
 
-    const provider = new ServiceAccountImpersonationProvider(validConfig);
+    const provider = new ServiceAccountImpersonationProvider(defaultSAConfig);
     const tokens = await provider.tokens();
 
     expect(tokens).toBeUndefined();
   });
 
   it('should make a request with the correct parameters', async () => {
-    const config: MCPServerConfig = defaultSAConfig;
-
     mockRequest.mockResolvedValue({ data: { token: 'test-token' } });
 
-    const provider = new ServiceAccountImpersonationProvider(config);
+    const provider = new ServiceAccountImpersonationProvider(defaultSAConfig);
     await provider.tokens();
 
     expect(mockRequest).toHaveBeenCalledWith({

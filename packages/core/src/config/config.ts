@@ -155,7 +155,9 @@ export class MCPServerConfig {
     readonly oauth?: MCPOAuthConfig,
     readonly authProviderType?: AuthProviderType,
     // Service Account Configuration
+    /* targetAudience format: CLIENT_ID.apps.googleusercontent.com */
     readonly targetAudience?: string,
+    /* targetServiceAccount format: <service-account-name>@<project-num>.iam.gserviceaccount.com */
     readonly targetServiceAccount?: string,
   ) {}
 }
