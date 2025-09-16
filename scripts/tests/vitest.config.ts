@@ -16,5 +16,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
     },
+    minThreads: 8,
+    maxThreads: 16,
   },
 });

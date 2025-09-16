@@ -22,5 +22,7 @@ export default defineConfig({
         ['json-summary', { outputFile: 'coverage-summary.json' }],
       ],
     },
+    minThreads: 8,
+    maxThreads: 16,
   },
 });

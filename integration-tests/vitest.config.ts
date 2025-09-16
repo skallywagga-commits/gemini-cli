@@ -14,5 +14,7 @@ export default defineConfig({
     include: ['**/*.test.ts'],
     retry: 2,
     fileParallelism: true,
+    minThreads: 8,
+    maxThreads: 16,
   },
 });
