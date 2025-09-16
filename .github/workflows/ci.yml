@@ -45,7 +45,7 @@ jobs:
           fetch-depth: 1
 
       - name: 'Cache tools'
-        uses: 'actions/cache@v4'
+        uses: 'actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809'
         with:
           path: |
             ~/.local/bin/shellcheck
@@ -194,7 +194,7 @@ jobs:
           fetch-depth: 1
 
       - name: 'Cache shellcheck'
-        uses: 'actions/cache@v4'
+        uses: 'actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809'
         with:
           path: '~/.local/bin/shellcheck'
           key: '${{ runner.os }}-shellcheck-${{ env.SHELLCHECK_VERSION }}'
@@ -281,7 +281,7 @@ jobs:
           python-version: '3'
 
       - name: 'Cache yamllint'
-        uses: 'actions/cache@v4'
+        uses: 'actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809'
         with:
           path: '~/.local/bin'
           key: '${{ runner.os }}-yamllint-${{ env.YAMLLINT_VERSION }}'
