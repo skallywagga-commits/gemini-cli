@@ -8,10 +8,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkForExtensionUpdate,
   cloneFromGit,
+  findReleaseAsset,
 } from './github.js';
 import { simpleGit, type SimpleGit } from 'simple-git';
 import { ExtensionUpdateState } from '../../ui/state/extensions.js';
 import type { ExtensionInstallMetadata } from '../extension.js';
+import type * as os from 'node:os';
+
+const mockPlatform = vi.hoisted(() => vi.fn());
+const mockArch = vi.hoisted(() => vi.fn());
+vi.mock('node:os', async (importOriginal) => {
+  const actual = await importOriginal<typeof os>();
+  return {
+    ...actual,
+    platform: mockPlatform,
+    arch: mockArch,
+  };
+});
 
 vi.mock('simple-git');
 
@@ -164,6 +177,58 @@ describe('git extension helpers', () => {
       mockGit.getRemotes.mockRejectedValue(new Error('git error'));
       const result = await checkForExtensionUpdate(installMetadata);
       expect(result).toBe(ExtensionUpdateState.ERROR);
+    });
+  });
+
+  describe('findReleaseAsset', () => {
+    const assets = [
+      { name: 'extension-darwin-arm64.tar.gz', browser_download_url: 'url1' },
+      { name: 'extension-darwin-x64.tar.gz', browser_download_url: 'url2' },
+      { name: 'extension-linux-x64.tar.gz', browser_download_url: 'url3' },
+      { name: 'extension-win32-x64.tar.gz', browser_download_url: 'url4' },
+      { name: 'extension-generic.tar.gz', browser_download_url: 'url5' },
+    ];
+
+    it('should find asset matching platform and architecture', () => {
+      mockPlatform.mockReturnValue('darwin');
+      mockArch.mockReturnValue('arm64');
+      const result = findReleaseAsset(assets);
+      expect(result).toEqual(assets[0]);
+    });
+
+    it('should find asset matching platform if arch does not match', () => {
+      mockPlatform.mockReturnValue('linux');
+      mockArch.mockReturnValue('arm64');
+      const result = findReleaseAsset(assets);
+      expect(result).toEqual(assets[2]);
+    });
+
+    it('should return undefined if no matching asset is found', () => {
+      mockPlatform.mockReturnValue('sunos');
+      mockArch.mockReturnValue('x64');
+      const result = findReleaseAsset(assets);
+      expect(result).toBeUndefined();
+    });
+
+    it('should find generic asset if it is the only one', () => {
+      const singleAsset = [
+        { name: 'extension.tar.gz', browser_download_url: 'url' },
+      ];
+      mockPlatform.mockReturnValue('darwin');
+      mockArch.mockReturnValue('arm64');
+      const result = findReleaseAsset(singleAsset);
+      expect(result).toEqual(singleAsset[0]);
+    });
+
+    it('should return undefined if multiple generic assets exist', () => {
+      const multipleGenericAssets = [
+        { name: 'extension-1.tar.gz', browser_download_url: 'url1' },
+        { name: 'extension-2.tar.gz', browser_download_url: 'url2' },
+      ];
+      mockPlatform.mockReturnValue('darwin');
+      mockArch.mockReturnValue('arm64');
+      const result = findReleaseAsset(multipleGenericAssets);
+      expect(result).toBeUndefined();
     });
   });
 });

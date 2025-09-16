@@ -202,7 +202,7 @@ interface Asset {
   browser_download_url: string;
 }
 
-function findReleaseAsset(assets: Asset[]): Asset | undefined {
+export function findReleaseAsset(assets: Asset[]): Asset | undefined {
   const platform = os.platform();
   const arch = os.arch();
 
