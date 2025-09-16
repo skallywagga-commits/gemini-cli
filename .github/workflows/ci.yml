@@ -440,8 +440,7 @@ jobs:
   # Check for changes in bundle size.
   bundle_size:
     name: 'Check Bundle Size'
-    if: |-
-      ${{ github.event_name != 'merge_group' }}
+    if: 'github.event_name == ''pull_request'''
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'read' # For checkout
