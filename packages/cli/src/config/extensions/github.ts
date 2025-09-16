@@ -31,8 +31,20 @@ export async function cloneFromGit(
     const git = simpleGit(destination);
     let sourceUrl = installMetadata.source;
     const token = getGitHubToken();
-    if (token && sourceUrl.startsWith('https://github.com')) {
-      sourceUrl = sourceUrl.replace('https://', `https://${token}@`);
+    if (token) {
+      try {
+        const parsedUrl = new URL(sourceUrl);
+        if (
+          parsedUrl.protocol === 'https:' &&
+          parsedUrl.hostname === 'github.com'
+        ) {
+          parsedUrl.username = token;
+          sourceUrl = parsedUrl.toString();
+        }
+      } catch {
+        // If source is not a valid URL, we don't inject the token.
+        // We let git handle the source as is.
+      }
     }
     await git.clone(sourceUrl, './', ['--depth', '1']);
 
