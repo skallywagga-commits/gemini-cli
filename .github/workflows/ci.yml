@@ -315,7 +315,7 @@ jobs:
     name: 'Test'
     runs-on: '${{ matrix.os }}'
     needs:
-      - 'lint'
+      - 'lint_js_build_and_typecheck'
     permissions:
       contents: 'read'
       checks: 'write'
