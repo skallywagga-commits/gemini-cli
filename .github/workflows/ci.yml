@@ -61,6 +61,9 @@ jobs:
       - name: 'Run yamllint'
         run: 'node scripts/lint.js --yamllint'
 
+      - name: 'Run Prettier'
+        run: 'node scripts/lint.js --prettier'
+
   test_linux:
     name: 'Test (Linux)'
     runs-on: 'gemini-cli-ubuntu-16-core'
@@ -111,7 +114,6 @@ jobs:
         with:
           name: 'test-results-fork-${{ matrix.node-version }}-linux'
           path: 'packages/*/junit.xml'
-
 
   test_slow_platforms:
     name: 'Test (Slow Platforms)'

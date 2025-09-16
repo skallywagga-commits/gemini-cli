@@ -92,7 +92,7 @@ const LINTERS = {
   },
   yamllint: {
     check: 'command -v yamllint',
-    installer: `pip3 install --user "yamllint==${YAMLLINT_VERSION}"`, 
+    installer: `pip3 install --user "yamllint==${YAMLLINT_VERSION}"`,
     run: "git ls-files | grep -E '\\.(yaml|yml)' | xargs yamllint --format github",
   },
 };
@@ -124,7 +124,7 @@ export function setupLinters() {
       console.log(`Installing ${linter}...`);
       if (!runCommand(installer)) {
         console.error(
-          `Failed to install ${linter}. Please install it manually.`, 
+          `Failed to install ${linter}. Please install it manually.`,
         );
         process.exit(1);
       }
@@ -161,6 +161,13 @@ export function runYamllint() {
   }
 }
 
+export function runPrettier() {
+  console.log('\nRunning Prettier...');
+  if (!runCommand('prettier --check .')) {
+    process.exit(1);
+  }
+}
+
 function main() {
   const args = process.argv.slice(2);
 
@@ -170,6 +177,7 @@ function main() {
     runActionlint();
     runShellcheck();
     runYamllint();
+    runPrettier();
     console.log('\nAll linting checks passed!');
     return;
   }
@@ -189,7 +197,9 @@ function main() {
   if (args.includes('--yamllint')) {
     runYamllint();
   }
+  if (args.includes('--prettier')) {
+    runPrettier();
+  }
 }
 
 main();
-
