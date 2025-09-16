@@ -30,10 +30,10 @@ To ensure Gemini CLI can automatically find the correct release asset for each p
 
 **Examples:**
 
-- `my-tool-darwin-arm64.tar.gz` (specific to Apple Silicon Macs)
-- `my-tool-darwin.tar.gz` (for all Macs)
-- `my-tool-linux-x64.tar.gz`
-- `my-tool-win32-x64.zip`
+- `darwin.arm64.my-tool.tar.gz` (specific to Apple Silicon Macs)
+- `darwin.my-tool.tar.gz` (for all Macs)
+- `linux.x64.my-tool.tar.gz`
+- `win32.my-tool.zip`
 
 If your extension is platform-independent, you can provide a single generic asset. In this case, there should be only one asset attached to the release.
 
@@ -80,7 +80,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            release/my-tool-darwin-arm64.tar.gz
-            release/my-tool-linux-x64.tar.gz
-            release/my-tool-win32-x64.zip
+            release/darwin.arm64.my-tool.tar.gz
+            release/linux.arm64.my-tool.tar.gz
+            release/win32.arm64.my-tool.zip
 ```
