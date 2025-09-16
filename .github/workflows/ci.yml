@@ -77,12 +77,10 @@ jobs:
       # For actionlint, we specifically ignore shellcheck rules that are
       # annoying or unhelpful. See the shellcheck action for a description.
       - name: 'Run actionlint'
-        env:
-          ACTIONLINT_FORMAT: '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Filepath}}@{{$err.Line}} {{$err.Message}}%0A```%0A{{replace $err.Snippet "\n" "%0A"}}%0A```\n{{end}}'
         run: |-
           actionlint \
             -color \
-            -format "${ACTIONLINT_FORMAT}" \
+            -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Filepath}}@{{$err.Line}} {{$err.Message}}%0A```%0A{{replace $err.Snippet "\\n" "%0A"}}%0A```\n{{end}}' \
             -ignore 'SC2002:' \
             -ignore 'SC2016:' \
             -ignore 'SC2129:' \
