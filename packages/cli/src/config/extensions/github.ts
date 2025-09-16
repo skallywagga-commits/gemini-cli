@@ -14,6 +14,10 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
 
+function getGitHubToken(): string | undefined {
+  return process.env['GITHUB_TOKEN'];
+}
+
 /**
  * Clones a Git repository to a specified local path.
  * @param installMetadata The metadata for the extension to install.
@@ -25,7 +29,12 @@ export async function cloneFromGit(
 ): Promise<void> {
   try {
     const git = simpleGit(destination);
-    await git.clone(installMetadata.source, './', ['--depth', '1']);
+    let sourceUrl = installMetadata.source;
+    const token = getGitHubToken();
+    if (token && sourceUrl.startsWith('https://github.com')) {
+      sourceUrl = sourceUrl.replace('https://', `https://${token}@`);
+    }
+    await git.clone(sourceUrl, './', ['--depth', '1']);
 
     const remotes = await git.getRemotes(true);
     if (remotes.length === 0) {
@@ -77,7 +86,10 @@ export async function checkForExtensionUpdate(
       // Determine the ref to check on the remote.
       const refToCheck = installMetadata.ref || 'HEAD';
 
-      const lsRemoteOutput = await git.listRemote([remoteUrl, refToCheck]);
+      const lsRemoteOutput = await git.listRemote([
+        remotes[0].name,
+        refToCheck,
+      ]);
 
       if (typeof lsRemoteOutput !== 'string' || lsRemoteOutput.trim() === '') {
         console.error(`Git ref ${refToCheck} not found.`);
@@ -242,9 +254,16 @@ export function findReleaseAsset(assets: Asset[]): Asset | undefined {
 async function fetchJson(
   url: string,
 ): Promise<{ assets: Asset[]; tag_name: string }> {
+  const headers: { 'User-Agent': string; Authorization?: string } = {
+    'User-Agent': 'gemini-cli',
+  };
+  const token = getGitHubToken();
+  if (token) {
+    headers.Authorization = `token ${token}`;
+  }
   return new Promise((resolve, reject) => {
     https
-      .get(url, { headers: { 'User-Agent': 'gemini-cli' } }, (res) => {
+      .get(url, { headers }, (res) => {
         if (res.statusCode !== 200) {
           return reject(
             new Error(`Request failed with status code ${res.statusCode}`),
@@ -261,9 +280,16 @@ async function fetchJson(
 }
 
 async function downloadFile(url: string, dest: string): Promise<void> {
+  const headers: { 'User-agent': string; Authorization?: string } = {
+    'User-agent': 'gemini-cli',
+  };
+  const token = getGitHubToken();
+  if (token) {
+    headers.Authorization = `token ${token}`;
+  }
   return new Promise((resolve, reject) => {
     https
-      .get(url, { headers: { 'User-agent': 'gemini-cli' } }, (res) => {
+      .get(url, { headers }, (res) => {
         if (res.statusCode === 302 || res.statusCode === 301) {
           downloadFile(res.headers.location!, dest).then(resolve).catch(reject);
           return;
