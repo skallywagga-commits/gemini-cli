@@ -100,7 +100,8 @@ const LINTERS = {
 function runCommand(command, stdio = 'inherit') {
   try {
     const env = { ...process.env };
-    env.PATH = `${TEMP_DIR}/actionlint:${TEMP_DIR}/shellcheck:${env.PATH}`;
+    const nodeBin = join(process.cwd(), 'node_modules', '.bin');
+    env.PATH = `${nodeBin}:${TEMP_DIR}/actionlint:${TEMP_DIR}/shellcheck:${env.PATH}`;
     if (process.platform === 'darwin') {
       env.PATH = `${env.PATH}:${process.env.HOME}/Library/Python/3.12/bin`;
     } else if (process.platform === 'linux') {
