@@ -313,7 +313,7 @@ jobs:
 
   test:
     name: 'Test'
-    runs-on: '${{ matrix.os == 'ubuntu-latest' && 'ubuntu-latest-8-cores' || matrix.os == 'windows-latest' && 'windows-latest-8-cores' || matrix.os }}'
+    runs-on: '${{ matrix.os }}'
     needs:
       - 'lint'
     permissions:

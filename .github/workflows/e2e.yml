@@ -47,7 +47,7 @@ jobs:
 
   e2e-test:
     name: 'E2E Test (${{ matrix.os }}) - ${{ matrix.sandbox }}'
-    needs: build
+    needs: 'build'
     # This condition ensures the job runs for pushes to main, merge groups,
     # PRs from the base repo, OR PRs from forks with the correct label.
     if: |
