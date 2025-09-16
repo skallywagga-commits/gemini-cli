@@ -52,11 +52,11 @@ jobs:
             ~/.local/bin/actionlint
           key: '${{ runner.os }}-lint-tools-${{ env.SHELLCHECK_VERSION }}-${{ env.ACTIONLINT_VERSION }}'
 
-      - name: 'Install shellcheck' # Actionlint uses shellcheck
         run: |-
           if [ ! -f "${HOME}/.local/bin/shellcheck" ]; then
             mkdir -p "${HOME}/.local/bin"
             curl -sSLo "${RUNNER_TEMP}/.shellcheck.txz" "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+            mkdir -p "${RUNNER_TEMP}/shellcheck"
             tar -xf "${RUNNER_TEMP}/.shellcheck.txz" -C "${RUNNER_TEMP}/shellcheck" --strip-components=1
             mv "${RUNNER_TEMP}/shellcheck/shellcheck" "${HOME}/.local/bin/shellcheck"
             echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
@@ -201,7 +201,8 @@ jobs:
         run: |-
           if [ ! -f "${HOME}/.local/bin/shellcheck" ]; then
             mkdir -p "${HOME}/.local/bin"
-            curl -sSLo "${RUNNER_TEMP}/.shellcheck.txz" "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+            curl -sSLo "${RUNNER_TEMP}/.shellcheck.txz" "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_4.tar.xz"
+            mkdir -p "${RUNNER_TEMP}/shellcheck"
             tar -xf "${RUNNER_TEMP}/.shellcheck.txz" -C "${RUNNER_TEMP}/shellcheck" --strip-components=1
             mv "${RUNNER_TEMP}/shellcheck/shellcheck" "${HOME}/.local/bin/shellcheck"
             echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
@@ -309,14 +310,6 @@ jobs:
       - 'lint_yaml'
     runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
-      - name: 'Debug linting results'
-        run: |
-          echo "lint_github_actions: ${{ needs.lint_github_actions.result }}"
-          echo "lint_js_format: ${{ needs.lint_js_format.result }}"
-          echo "lint_js_lint: ${{ needs.lint_js_lint.result }}"
-          echo "lint_js_build_and_typecheck: ${{ needs.lint_js_build_and_typecheck.result }}"
-          echo "lint_shell: ${{ needs.lint_shell.result }}"
-          echo "lint_yaml: ${{ needs.lint_yaml.result }}"
       - name: 'Check linting results'
         run: |
           if [[ ${{ needs.lint_github_actions.result }} != 'success' || \
@@ -458,7 +451,7 @@ jobs:
   # Check for changes in bundle size.
   bundle_size:
     name: 'Check Bundle Size'
-    if: 'github.event_name == ''pull_request'''
+    if: "github.event_name == 'pull_request'"
     runs-on: 'gemini-cli-ubuntu-16-core'
     permissions:
       contents: 'read' # For checkout
