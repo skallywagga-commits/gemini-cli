@@ -760,7 +760,7 @@ describe('installExtension', () => {
       version: '1.0.0',
     });
     const targetExtDir = path.join(userExtensionsDir, 'my-local-extension');
-    const metadataPath = path.join(targetExtDir, INSTALL_METMETADATA_FILENAME);
+    const metadataPath = path.join(targetExtDir, INSTALL_METADATA_FILENAME);
 
     await installExtension({
       source: sourceExtDir,

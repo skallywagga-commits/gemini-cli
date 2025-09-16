@@ -8,7 +8,7 @@ import type { GeminiCLIExtension } from '@google/gemini-cli-core';
 import {
   updateAllUpdatableExtensions,
   updateExtension,
-} from '../../config/extension.js';
+} from '../../config/extensions/update.js';
 import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
 import { MessageType } from '../types.js';
 import { extensionsCommand } from './extensionsCommand.js';
@@ -23,7 +23,7 @@ import {
 } from 'vitest';
 import { ExtensionUpdateState } from '../state/extensions.js';
 
-vi.mock('../../config/extension.js', () => ({
+vi.mock('../../config/extensions/update.js', () => ({
   updateExtension: vi.fn(),
   updateAllUpdatableExtensions: vi.fn(),
 }));
@@ -157,6 +157,7 @@ describe('extensionsCommand', () => {
         version: '1.0.0',
         isActive: true,
         path: '/test/dir/ext-one',
+        autoUpdate: false,
       };
       mockUpdateExtension.mockResolvedValue({
         name: extension.name,
@@ -197,6 +198,7 @@ describe('extensionsCommand', () => {
         version: '1.0.0',
         isActive: true,
         path: '/test/dir/ext-one',
+        autoUpdate: false,
       };
       const extensionTwo: GeminiCLIExtension = {
         name: 'ext-two',
@@ -204,6 +206,7 @@ describe('extensionsCommand', () => {
         version: '1.0.0',
         isActive: true,
         path: '/test/dir/ext-two',
+        autoUpdate: false,
       };
       mockGetExtensions.mockReturnValue([extensionOne, extensionTwo]);
       mockContext.ui.extensionsUpdateState.set(

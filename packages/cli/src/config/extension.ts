@@ -321,7 +321,7 @@ export function annotateActiveExtensions(
       source: extension.installMetadata?.source,
       type: extension.installMetadata?.type,
       ref: extension.installMetadata?.ref,
-      autoUpdate: extension.installMetadata?.autoUpdate,
+      autoUpdate: extension.installMetadata?.autoUpdate ?? false,
     }));
   }
 
@@ -340,7 +340,7 @@ export function annotateActiveExtensions(
       version: extension.config.version,
       isActive,
       path: extension.path,
-      autoUpdate: extension.installMetadata?.autoUpdate,
+      autoUpdate: extension.installMetadata?.autoUpdate ?? false,
     });
   }
 
