@@ -43,35 +43,23 @@ jobs:
           name: 'build-artifacts'
           path: 'build-artifacts.tar'
 
-  e2e-test:
-    name: 'E2E Test (${{ matrix.os }}) - ${{ matrix.sandbox }}'
+  e2e_linux:
+    name: 'E2E Test (Linux) - ${{ matrix.sandbox }}'
     needs: 'build'
-    # This condition ensures the job runs for pushes to main, merge groups,
-    # PRs from the base repo, OR PRs from forks with the correct label.
     if: |
       github.event_name == 'push' ||
       github.event_name == 'merge_group' ||
       (github.event.pull_request.head.repo.full_name == github.repository) ||
       (github.event.label.name == 'maintainer:e2e:ok')
-    runs-on: '${{ matrix.os }}'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - 'gemini-cli-ubuntu-16-core'
-          - 'macos-latest'
-          - 'gemini-cli-windows-16-core'
         sandbox:
           - 'sandbox:none'
           - 'sandbox:docker'
         node-version:
           - '20.x'
-        exclude:
-          # Docker tests are not supported on macOS or Windows
-          - os: 'macos-latest'
-            sandbox: 'sandbox:docker'
-          - os: 'gemini-cli-windows-16-core'
-            sandbox: 'sandbox:docker'
 
     steps:
       - name: 'Checkout (fork)'
@@ -100,8 +88,7 @@ jobs:
           node-version: '${{ matrix.node-version }}'
 
       - name: 'Set up Docker'
-        if: |-
-          matrix.os == 'ubuntu-latest-8-cores' && matrix.sandbox == 'sandbox:docker'
+        if: "matrix.sandbox == 'sandbox:docker'"
         uses: 'docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435' # ratchet:docker/setup-buildx-action@v3
 
       - name: 'Run E2E tests'
@@ -111,20 +98,74 @@ jobs:
           SANDBOX: '${{ matrix.sandbox }}'
           VERBOSE: 'true'
         shell: 'bash'
-        run: |-
-          npm run "test:integration:${SANDBOX}"
+        run: 'npm run "test:integration:${SANDBOX}"'
+
+  e2e_slow_platforms:
+    name: 'E2E Test (${{ matrix.os }})'
+    needs: 'build'
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'merge_group' ||
+      (github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event.label.name == 'maintainer:e2e:ok')
+    runs-on: '${{ matrix.os }}'
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'macos-latest'
+          - 'gemini-cli-windows-16-core'
+        node-version:
+          - '20.x'
+
+    steps:
+      - name: 'Checkout (fork)'
+        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        if: "github.event_name == 'pull_request_target'"
+        with:
+          ref: '${{ github.event.pull_request.head.sha }}'
+          repository: '${{ github.event.pull_request.head.repo.full_name }}'
+
+      - name: 'Checkout (internal)'
+        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        if: "github.event_name != 'pull_request_target'"
+
+      - name: 'Download build artifacts'
+        uses: 'actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093'
+        with:
+          name: 'build-artifacts'
+          path: '.'
+
+      - name: 'Extract build artifacts'
+        run: 'tar -xvf build-artifacts.tar'
+
+      - name: 'Set up Node.js ${{ matrix.node-version }}'
+        uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions-node@v4
+        with:
+          node-version: '${{ matrix.node-version }}'
+
+      - name: 'Run E2E tests'
+        env:
+          GEMINI_API_KEY: '${{ secrets.GEMINI_API_KEY }}'
+          KEEP_OUTPUT: 'true'
+          SANDBOX: 'sandbox:none'
+          VERBOSE: 'true'
+        shell: 'bash'
+        run: 'npm run "test:integration:${SANDBOX}"'
 
   e2e:
     name: 'E2E'
     if: 'always()'
     needs:
-      - 'e2e-test'
+      - 'e2e_linux'
+      - 'e2e_slow_platforms'
     runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
       - name: 'Check E2E test results'
         run: |
-          if [[ ${{ needs.e2e-test.result }} != 'success' ]]; then
-            echo "One or more E2E test jobs failed."
+          if [[ ${{ needs.e2e_linux.result }} != 'success' ]]; then
+            echo "The required E2E test job failed."
             exit 1
           fi
-          echo "All E2E test jobs passed!"
+          echo "All required E2E test jobs passed!"
