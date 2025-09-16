@@ -114,21 +114,25 @@ jobs:
       - name: 'Install dependencies'
         run: 'npm ci'
 
-      - name: 'Run formatter check'
-        run: 'npm run format'
+      - name: 'Run formatters'
+        run: |-
+          npm run format
+          npx prettier --write integration-tests
 
       - name: 'Commit and push formatting changes'
         run: |-
           git config user.name "gemini-cli-robot"
           git config user.email "gemini-cli-robot@google.com"
           git add -A
-          git commit -m "style(auto): format code with prettier" || exit 0
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "style(auto): format code with prettier"
+            git push
+          fi
 
-      - name: 'Run formatter on integration tests'
-        run: |-
-          npx prettier --check integration-tests
-          git diff --exit-code
+      - name: 'Verify no outstanding formatting changes'
+        run: 'git diff --exit-code'
 
   #
   # Lint: Javascript Lint
@@ -151,11 +155,23 @@ jobs:
       - name: 'Install dependencies'
         run: 'npm ci'
 
-      - name: 'Run linter'
-        run: 'npm run lint:ci'
+      - name: 'Run linter to auto-fix'
+        run: 'npm run lint:fix'
 
-      - name: 'Run linter on integration tests'
-        run: 'npx eslint integration-tests --max-warnings 0'
+      - name: 'Commit and push linting changes'
+        run: |-
+          git config user.name "gemini-cli-robot"
+          git config user.email "gemini-cli-robot@google.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "style(auto): fix linting issues"
+            git push
+          fi
+
+      - name: 'Verify no outstanding linting issues'
+        run: 'npm run lint:ci'
 
   #
   # Lint: Javascript Build and Typecheck
