@@ -171,17 +171,6 @@ export function runPrettier() {
 function main() {
   const args = process.argv.slice(2);
 
-  if (args.length === 0) {
-    setupLinters();
-    runESLint();
-    runActionlint();
-    runShellcheck();
-    runYamllint();
-    runPrettier();
-    console.log('\nAll linting checks passed!');
-    return;
-  }
-
   if (args.includes('--setup')) {
     setupLinters();
   }
@@ -199,6 +188,16 @@ function main() {
   }
   if (args.includes('--prettier')) {
     runPrettier();
+  }
+
+  if (args.length === 0) {
+    setupLinters();
+    runESLint();
+    runActionlint();
+    runShellcheck();
+    runYamllint();
+    runPrettier();
+    console.log('\nAll linting checks passed!');
   }
 }
 
