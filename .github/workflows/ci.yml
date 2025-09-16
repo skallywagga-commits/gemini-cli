@@ -373,6 +373,12 @@ jobs:
           - '20.x'
           - '22.x'
           - '24.x'
+        package:
+          - 'packages/a2a-server'
+          - 'packages/cli'
+          - 'packages/core'
+          - 'packages/test-utils'
+          - 'packages/vscode-ide-companion'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
@@ -383,18 +389,13 @@ jobs:
           node-version: '${{ matrix.node-version }}'
           cache: 'npm'
 
-      - name: 'Build project'
-        run: |-
-          npm run build
-
       - name: 'Install dependencies for testing'
-        run: |-
-          npm ci
+        run: 'npm ci'
 
       - name: 'Run tests and generate reports'
         env:
           NO_COLOR: true
-        run: 'npm run test:ci'
+        run: 'npm run test:ci --workspace=${{ matrix.package }}'
 
       - name: 'Publish Test Report (for non-forks)'
         if: |-
@@ -421,44 +422,6 @@ jobs:
         with:
           name: 'coverage-reports-${{ matrix.node-version }}-${{ matrix.os }}'
           path: 'packages/*/coverage'
-
-  post_coverage_comment:
-    name: 'Post Coverage Comment'
-    runs-on: 'gemini-cli-ubuntu-16-core'
-    needs: 'ci'
-    if: |-
-      ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name == github.repository) }}
-    continue-on-error: true
-    permissions:
-      contents: 'read' # For checkout
-      pull-requests: 'write' # For commenting
-    strategy:
-      matrix:
-        # Reduce noise by only posting the comment once
-        os:
-          - 'gemini-cli-ubuntu-16-core'
-        node-version:
-          - '22.x'
-    steps:
-      - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
-
-      - name: 'Download coverage reports artifact'
-        uses: 'actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0' # ratchet:actions/download-artifact@v5
-        with:
-          name: 'coverage-reports-${{ matrix.node-version }}-${{ matrix.os }}'
-          path: 'coverage_artifact' # Download to a specific directory
-
-      - name: 'Post Coverage Comment using Composite Action'
-        uses: './.github/actions/post-coverage-comment' # Path to the composite action directory
-        with:
-          cli_json_file: 'coverage_artifact/cli/coverage/coverage-summary.json'
-          core_json_file: 'coverage_artifact/core/coverage/coverage-summary.json'
-          cli_full_text_summary_file: 'coverage_artifact/cli/coverage/full-text-summary.txt'
-          core_full_text_summary_file: 'coverage_artifact/core/coverage/full-text-summary.txt'
-          node_version: '${{ matrix.node-version }}'
-          os: '${{ matrix.os }}'
-          github_token: '${{ secrets.GITHUB_TOKEN }}'
 
   codeql:
     name: 'CodeQL'
