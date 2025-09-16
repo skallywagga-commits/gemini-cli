@@ -37,7 +37,7 @@ jobs:
   #
   lint_github_actions:
     name: 'Lint (GitHub Actions)'
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
@@ -96,7 +96,7 @@ jobs:
   #
   lint_js_format:
     name: 'Lint (JS Format)'
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
@@ -127,7 +127,7 @@ jobs:
   #
   lint_js_lint:
     name: 'Lint (JS Lint)'
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
@@ -184,7 +184,7 @@ jobs:
   #
   lint_shell:
     name: 'Lint (Shell)'
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
@@ -265,7 +265,7 @@ jobs:
   #
   lint_yaml:
     name: 'Lint (YAML)'
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
@@ -307,7 +307,7 @@ jobs:
       - 'lint_js_build_and_typecheck'
       - 'lint_shell'
       - 'lint_yaml'
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
       - name: 'Check linting results'
         run: |
@@ -336,7 +336,7 @@ jobs:
       matrix:
         os:
           - 'macos-latest'
-          - 'ubuntu-latest'
+          - 'gemini-cli-ubuntu-16-core'
           - 'windows-latest'
         node-version:
           - '20.x'
@@ -393,7 +393,7 @@ jobs:
 
   post_coverage_comment:
     name: 'Post Coverage Comment'
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     needs: 'test_matrix'
     if: |-
       ${{ always() && github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name == github.repository) }}
@@ -405,7 +405,7 @@ jobs:
       matrix:
         # Reduce noise by only posting the comment once
         os:
-          - 'ubuntu-latest'
+          - 'gemini-cli-ubuntu-16-core'
         node-version:
           - '22.x'
     steps:
@@ -431,7 +431,7 @@ jobs:
 
   codeql:
     name: 'CodeQL'
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     permissions:
       actions: 'read'
       contents: 'read'
@@ -452,7 +452,7 @@ jobs:
   bundle_size:
     name: 'Check Bundle Size'
     if: 'github.event_name == ''pull_request'''
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     permissions:
       contents: 'read' # For checkout
       pull-requests: 'write' # For commenting
@@ -479,7 +479,7 @@ jobs:
       - 'test_matrix'
       - 'codeql'
       - 'bundle_size'
-    runs-on: 'ubuntu-latest'
+    runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
       - name: 'Check all job results'
         run: |
