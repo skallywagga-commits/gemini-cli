@@ -309,6 +309,14 @@ jobs:
       - 'lint_yaml'
     runs-on: 'gemini-cli-ubuntu-16-core'
     steps:
+      - name: 'Debug linting results'
+        run: |
+          echo "lint_github_actions: ${{ needs.lint_github_actions.result }}"
+          echo "lint_js_format: ${{ needs.lint_js_format.result }}"
+          echo "lint_js_lint: ${{ needs.lint_js_lint.result }}"
+          echo "lint_js_build_and_typecheck: ${{ needs.lint_js_build_and_typecheck.result }}"
+          echo "lint_shell: ${{ needs.lint_shell.result }}"
+          echo "lint_yaml: ${{ needs.lint_yaml.result }}"
       - name: 'Check linting results'
         run: |
           if [[ ${{ needs.lint_github_actions.result }} != 'success' || \
