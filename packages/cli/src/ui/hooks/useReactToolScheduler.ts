@@ -27,6 +27,10 @@ import type {
   IndividualToolCallDisplay,
 } from '../types.js';
 import { ToolCallStatus } from '../types.js';
+import {
+  sanitizeAnsiCtrl,
+  sanitizeConfirmationDetails,
+} from '../utils/stringUtils.js';
 
 export type ScheduleFn = (
   request: ToolCallRequestInfo | ToolCallRequestInfo[],
@@ -223,10 +227,10 @@ export function mapToDisplay(
           trackedCall.tool === undefined
             ? trackedCall.request.name
             : trackedCall.tool.displayName;
-        description = JSON.stringify(trackedCall.request.args);
+        description = sanitizeAnsiCtrl(JSON.stringify(trackedCall.request.args));
       } else {
         displayName = trackedCall.tool.displayName;
-        description = trackedCall.invocation.getDescription();
+        description = sanitizeAnsiCtrl(trackedCall.invocation.getDescription());
         renderOutputAsMarkdown = trackedCall.tool.isOutputMarkdown;
       }
 
@@ -268,7 +272,9 @@ export function mapToDisplay(
             ...baseDisplayProperties,
             status: mapCoreStatusToDisplayStatus(trackedCall.status),
             resultDisplay: undefined,
-            confirmationDetails: trackedCall.confirmationDetails,
+            confirmationDetails: sanitizeConfirmationDetails(
+              trackedCall.confirmationDetails,
+            ),
           };
         case 'executing':
           return {

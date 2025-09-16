@@ -49,6 +49,7 @@ import { useShellCommandProcessor } from './shellCommandProcessor.js';
 import { handleAtCommand } from './atCommandProcessor.js';
 import { findLastSafeSplitPoint } from '../utils/markdownUtilities.js';
 import { useStateAndRef } from './useStateAndRef.js';
+import { sanitizeAnsiCtrl } from '../utils/stringUtils.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { useLogger } from './useLogger.js';
 import {
@@ -446,7 +447,7 @@ export const useGeminiStream = (
         // Update the existing message with accumulated content
         setPendingHistoryItem((item) => ({
           type: item?.type as 'gemini' | 'gemini_content',
-          text: newGeminiMessageBuffer,
+          text: sanitizeAnsiCtrl(newGeminiMessageBuffer),
         }));
       } else {
         // This indicates that we need to split up this Gemini Message.
@@ -464,11 +465,11 @@ export const useGeminiStream = (
             type: pendingHistoryItemRef.current?.type as
               | 'gemini'
               | 'gemini_content',
-            text: beforeText,
+            text: sanitizeAnsiCtrl(beforeText),
           },
           userMessageTimestamp,
         );
-        setPendingHistoryItem({ type: 'gemini_content', text: afterText });
+        setPendingHistoryItem({ type: 'gemini_content', text: sanitizeAnsiCtrl(afterText) });
         newGeminiMessageBuffer = afterText;
       }
       return newGeminiMessageBuffer;
