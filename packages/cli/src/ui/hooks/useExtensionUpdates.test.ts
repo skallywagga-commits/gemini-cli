@@ -155,16 +155,9 @@ describe('useExtensionUpdates', () => {
       installMetadata: {
         source: 'https://some.git/repo',
         type: 'git',
+        autoUpdate: true,
       },
     });
-    const settingsDir = path.join(tempHomeDir, GEMINI_DIR);
-    fs.mkdirSync(settingsDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(settingsDir, 'settings.json'),
-      JSON.stringify({
-        extensions: { autoUpdate: { 'test-extension': true } },
-      }),
-    );
     const extension = annotateActiveExtensions(
       [loadExtension(extensionDir)!],
       [],

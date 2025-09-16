@@ -1005,16 +1005,6 @@ const SETTINGS_SCHEMA = {
         showInDialog: false,
         mergeStrategy: MergeStrategy.UNION,
       },
-      autoUpdate: {
-        type: 'object',
-        label: 'Auto Update Extensions',
-        category: 'Extensions',
-        requiresRestart: true,
-        default: false as boolean | Record<string, boolean>,
-        description:
-          'Enable or disable automatic updates for extensions. Can be a boolean to control all extensions, or an object to configure per-extension.',
-        showInDialog: true,
-      },
     },
   },
 } as const satisfies SettingsSchema;

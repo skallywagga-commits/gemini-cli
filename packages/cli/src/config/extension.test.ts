@@ -453,59 +453,61 @@ describe('annotateActiveExtensions', () => {
       fs.rmSync(tempHomeDir, { recursive: true, force: true });
     });
 
-    it('should be false if autoUpdate is not set', () => {
+    it('should be false if autoUpdate is not set in install metadata', () => {
       const activeExtensions = annotateActiveExtensions(
         extensions,
         [],
         tempHomeDir,
       );
-      expect(activeExtensions.every((e) => e.autoUpdate)).toBe(false);
+      expect(activeExtensions.every((e) => e.autoUpdate === false)).toBe(true);
     });
 
-    it('should be true for all extensions if autoUpdate is true', () => {
-      const settingsDir = path.join(tempHomeDir, GEMINI_DIR);
-      fs.mkdirSync(settingsDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(settingsDir, 'settings.json'),
-        JSON.stringify({ extensions: { autoUpdate: true } }),
-      );
-
+    it('should be true if autoUpdate is true in install metadata', () => {
+      const extensionsWithAutoUpdate: Extension[] = extensions.map((e) => ({
+        ...e,
+        installMetadata: {
+          ...e.installMetadata!,
+          autoUpdate: true,
+        },
+      }));
       const activeExtensions = annotateActiveExtensions(
-        extensions,
+        extensionsWithAutoUpdate,
         [],
         tempHomeDir,
       );
-      expect(activeExtensions.every((e) => e.autoUpdate)).toBe(true);
+      expect(activeExtensions.every((e) => e.autoUpdate === true)).toBe(true);
     });
 
-    it('should be false for all extensions if autoUpdate is false', () => {
-      const settingsDir = path.join(tempHomeDir, GEMINI_DIR);
-      fs.mkdirSync(settingsDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(settingsDir, 'settings.json'),
-        JSON.stringify({ extensions: { autoUpdate: false } }),
-      );
-
+    it('should respect the per-extension settings from install metadata', () => {
+      const extensionsWithAutoUpdate: Extension[] = [
+        {
+          path: '/path/to/ext1',
+          config: { name: 'ext1', version: '1.0.0' },
+          contextFiles: [],
+          installMetadata: {
+            source: 'test',
+            type: 'local',
+            autoUpdate: true,
+          },
+        },
+        {
+          path: '/path/to/ext2',
+          config: { name: 'ext2', version: '1.0.0' },
+          contextFiles: [],
+          installMetadata: {
+            source: 'test',
+            type: 'local',
+            autoUpdate: false,
+          },
+        },
+        {
+          path: '/path/to/ext3',
+          config: { name: 'ext3', version: '1.0.0' },
+          contextFiles: [],
+        },
+      ];
       const activeExtensions = annotateActiveExtensions(
-        extensions,
-        [],
-        tempHomeDir,
-      );
-      expect(activeExtensions.every((e) => !e.autoUpdate)).toBe(true);
-    });
-
-    it('should respect the per-extension settings', () => {
-      const settingsDir = path.join(tempHomeDir, GEMINI_DIR);
-      fs.mkdirSync(settingsDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(settingsDir, 'settings.json'),
-        JSON.stringify({
-          extensions: { autoUpdate: { ext1: true, ext3: false } },
-        }),
-      );
-
-      const activeExtensions = annotateActiveExtensions(
-        extensions,
+        extensionsWithAutoUpdate,
         [],
         tempHomeDir,
       );
@@ -749,6 +751,32 @@ describe('installExtension', () => {
       expect.stringContaining('Do you want to continue? (y/n)'),
       expect.any(Function),
     );
+  });
+
+  it('should save the autoUpdate flag to the install metadata', async () => {
+    const sourceExtDir = createExtension({
+      extensionsDir: tempHomeDir,
+      name: 'my-local-extension',
+      version: '1.0.0',
+    });
+    const targetExtDir = path.join(userExtensionsDir, 'my-local-extension');
+    const metadataPath = path.join(targetExtDir, INSTALL_METMETADATA_FILENAME);
+
+    await installExtension({
+      source: sourceExtDir,
+      type: 'local',
+      autoUpdate: true,
+    });
+
+    expect(fs.existsSync(targetExtDir)).toBe(true);
+    expect(fs.existsSync(metadataPath)).toBe(true);
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
+    expect(metadata).toEqual({
+      source: sourceExtDir,
+      type: 'local',
+      autoUpdate: true,
+    });
+    fs.rmSync(targetExtDir, { recursive: true, force: true });
   });
 });
 

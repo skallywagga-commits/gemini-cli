@@ -55,6 +55,7 @@ export async function updateExtension(
         source: extension.source!,
         type: extension.type,
         ref: extension.ref,
+        autoUpdate: extension.autoUpdate,
       },
       cwd,
       true,

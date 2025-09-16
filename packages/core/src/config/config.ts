@@ -119,7 +119,7 @@ export interface GeminiCLIExtension {
   source?: string;
   type?: 'git' | 'local' | 'link';
   ref?: string;
-  autoUpdate?: boolean;
+  autoUpdate: boolean;
 }
 
 export interface FileFilteringOptions {
