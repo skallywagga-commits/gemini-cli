@@ -12,7 +12,6 @@ import {
   GEMINI_DIR,
   Storage,
   ClearcutLogger,
-  Config,
   ExtensionInstallEvent,
   ExtensionUninstallEvent,
   ExtensionEnableEvent,
@@ -23,6 +22,7 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import { simpleGit } from 'simple-git';
 import { SettingScope, loadSettings } from '../config/settings.js';
+import { loadCliConfig, type CliArgs } from './config.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { recursivelyHydrateStrings } from './extensions/variables.js';
 import { isWorkspaceTrusted } from './trustedFolders.js';
@@ -126,20 +126,21 @@ export async function performWorkspaceExtensionMigration(
   return failedInstallNames;
 }
 
-function getClearcutConfig(cwd: string) {
-  const settings = loadSettings();
-  return new Config({
-    telemetry: settings.merged.telemetry,
-    sessionId: randomUUID(),
-    targetDir: cwd,
-    cwd,
-    model: '',
-    debugMode: false,
-  });
+async function getClearcutConfig(cwd: string) {
+  const settings = loadSettings(cwd);
+  const sessionId = randomUUID();
+  const extensions = loadExtensions();
+  const config = await loadCliConfig(
+    settings.merged,
+    extensions,
+    sessionId,
+    {} as unknown as CliArgs,
+  );
+  return config;
 }
 
-function getClearcutLogger(cwd: string) {
-  const config = getClearcutConfig(cwd);
+async function getClearcutLogger(cwd: string) {
+  const config = await getClearcutConfig(cwd);
   const logger = ClearcutLogger.getInstance(config);
   return logger;
 }
@@ -424,7 +425,7 @@ export async function installExtension(
   installMetadata: ExtensionInstallMetadata,
   cwd: string = process.cwd(),
 ): Promise<string> {
-  const logger = getClearcutLogger(cwd);
+  const logger = await getClearcutLogger(cwd);
   let newExtensionConfig: ExtensionConfig | null = null;
   let localSourcePath: string | undefined;
 
@@ -580,7 +581,7 @@ export async function uninstallExtension(
   extensionName: string,
   cwd: string = process.cwd(),
 ): Promise<void> {
-  const logger = getClearcutLogger(cwd);
+  const logger = await getClearcutLogger(cwd);
   const installedExtensions = loadUserExtensions();
   if (
     !installedExtensions.some(
@@ -731,10 +732,10 @@ export function disableExtension(
   }
 }
 
-export function enableExtension(name: string, scopes: SettingScope[]) {
+export async function enableExtension(name: string, scopes: SettingScope[]) {
   removeFromDisabledExtensions(name, scopes);
   logExtensionEnable(
-    getClearcutConfig(process.cwd()),
+    await getClearcutConfig(process.cwd()),
     new ExtensionEnableEvent(name, JSON.stringify(scopes)),
   );
 }
