@@ -252,7 +252,7 @@ jobs:
               current_line++
               if (match($0, /gemini-/)) {
                 keyword = substr($0, RSTART, RLENGTH)
-                print "::warning file=" current_file ",line=" current_line "::Found sensitive keyword: '" "'" keyword "'"'. Please double check this code is appropriate to submit."
+                print "::warning file=" current_file ",line=" current_line "::Found sensitive keyword: " "\x27" keyword "\x27" ". Please double check this code is appropriate to submit."
               }
             }
           '
