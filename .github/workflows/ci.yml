@@ -226,17 +226,17 @@ jobs:
           git ls-files | grep -E '\.(yaml|yml)' | xargs yamllint --format github
 
   #
-  # Lint: Keyword
+  # Lint: Sensitive Keywords
   #
-  lint_keyword:
-    name: 'Lint (Keyword)'
+  lint_sensitive_keywords:
+    name: 'Lint (Sensitive Keywords)'
     runs-on: 'ubuntu-latest'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
         with:
           fetch-depth: 0 # Full history is needed to diff against base branch
-      - name: 'Warn on specific keywords in changed code'
+      - name: 'Warn on sensitive keywords in changed code'
         run: |
           git diff --unified=0 "origin/${{ github.base_ref }}"..HEAD | awk '
             /^\+\+\+ b\/(.*)/ {
@@ -250,8 +250,9 @@ jobs:
             }
             /^\+/ {
               current_line++
-              if ($0 ~ /gemini-/) {
-                print "::warning file=" current_file ",line=" current_line "::Found `gemini-` keyword."
+              if (match($0, /gemini-|current_file/)) {
+                keyword = substr($0, RSTART, RLENGTH)
+                print "::warning file=" current_file ",line=" current_line "::Found sensitive keyword: " keyword ". Please double check this is appropriate to submit."
               }
             }
           '
@@ -269,7 +270,7 @@ jobs:
       - 'lint_javascript'
       - 'lint_shell'
       - 'lint_yaml'
-      - 'lint_keyword'
+      - 'lint_sensitive_keywords'
     runs-on: 'ubuntu-latest'
     steps:
       - run: |-
