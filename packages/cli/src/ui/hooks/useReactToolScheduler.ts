@@ -30,7 +30,7 @@ import { ToolCallStatus } from '../types.js';
 import {
   sanitizeAnsiCtrl,
   sanitizeConfirmationDetails,
-} from '../utils/stringUtils.js';
+} from '../utils/textUtils.js';
 
 export type ScheduleFn = (
   request: ToolCallRequestInfo | ToolCallRequestInfo[],
@@ -227,11 +227,31 @@ export function mapToDisplay(
           trackedCall.tool === undefined
             ? trackedCall.request.name
             : trackedCall.tool.displayName;
-        description = sanitizeAnsiCtrl(JSON.stringify(trackedCall.request.args));
+        description = JSON.stringify(trackedCall.request.args);
       } else {
         displayName = trackedCall.tool.displayName;
-        description = sanitizeAnsiCtrl(trackedCall.invocation.getDescription());
+        description = trackedCall.invocation.getDescription();
         renderOutputAsMarkdown = trackedCall.tool.isOutputMarkdown;
+      }
+
+      // Sanitize tool output
+      displayName = displayName ? sanitizeAnsiCtrl(displayName) : displayName;
+      description = description ? sanitizeAnsiCtrl(description) : description;
+      if (
+        'response' in trackedCall &&
+        typeof trackedCall.response.resultDisplay === 'string'
+      ) {
+        trackedCall.response.resultDisplay = sanitizeAnsiCtrl(
+          trackedCall.response.resultDisplay,
+        );
+      }
+      if (
+        'confirmationDetails' in trackedCall &&
+        trackedCall.confirmationDetails
+      ) {
+        trackedCall.confirmationDetails = sanitizeConfirmationDetails(
+          trackedCall.confirmationDetails,
+        );
       }
 
       const baseDisplayProperties: Omit<
@@ -272,9 +292,7 @@ export function mapToDisplay(
             ...baseDisplayProperties,
             status: mapCoreStatusToDisplayStatus(trackedCall.status),
             resultDisplay: undefined,
-            confirmationDetails: sanitizeConfirmationDetails(
-              trackedCall.confirmationDetails,
-            ),
+            confirmationDetails: trackedCall.confirmationDetails,
           };
         case 'executing':
           return {

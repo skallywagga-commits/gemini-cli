@@ -1068,4 +1068,36 @@ describe('mapToDisplay', () => {
     expect(display.tools[1].resultDisplay).toBe('markdown output');
     expect(display.tools[1].renderOutputAsMarkdown).toBe(true);
   });
+
+  it('should sanitize display properties containing ANSI codes', () => {
+    const corruptedTool = new MockTool({
+      name: 'corruptedTool',
+      displayName: '\u001b[31mCorrupted Tool\u001b[0m',
+      execute: vi.fn(),
+    });
+    const dirtyInvocation = corruptedTool.build({});
+    vi.spyOn(dirtyInvocation, 'getDescription').mockReturnValue(
+      'A \u001b[32mcorrupted tool\u001b[0m description'
+    );
+
+    const corruptedToolCall: ToolCall = {
+      request: { ...baseRequest, name: 'corruptedTool' },
+      status: 'success',
+      tool: corruptedTool,
+      invocation: dirtyInvocation,
+      response: {
+        ...baseResponse,
+        resultDisplay: '\u001b[33mCorrupted Tool Output\u001b[0m',
+      },
+    } as ToolCall;
+
+    const display = mapToDisplay(corruptedToolCall);
+    const toolDisplay = display.tools[0];
+
+    expect(toolDisplay.name).toBe('\\u001b[31mCorrupted Tool\\u001b[0m');
+    expect(toolDisplay.description).toBe(
+      'A \\u001b[32mcorrupted tool\\u001b[0m description'
+    );
+    expect(toolDisplay.resultDisplay).toBe('\\u001b[33mCorrupted Tool Output\\u001b[0m');
+  });
 });

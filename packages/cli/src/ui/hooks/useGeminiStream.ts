@@ -49,7 +49,7 @@ import { useShellCommandProcessor } from './shellCommandProcessor.js';
 import { handleAtCommand } from './atCommandProcessor.js';
 import { findLastSafeSplitPoint } from '../utils/markdownUtilities.js';
 import { useStateAndRef } from './useStateAndRef.js';
-import { sanitizeAnsiCtrl } from '../utils/stringUtils.js';
+import { sanitizeAnsiCtrl } from '../utils/textUtils.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { useLogger } from './useLogger.js';
 import {
@@ -429,6 +429,7 @@ export const useGeminiStream = (
         // Prevents additional output after a user initiated cancel.
         return '';
       }
+      eventValue = sanitizeAnsiCtrl(eventValue);
       let newGeminiMessageBuffer = currentGeminiMessageBuffer + eventValue;
       if (
         pendingHistoryItemRef.current?.type !== 'gemini' &&
@@ -447,7 +448,7 @@ export const useGeminiStream = (
         // Update the existing message with accumulated content
         setPendingHistoryItem((item) => ({
           type: item?.type as 'gemini' | 'gemini_content',
-          text: sanitizeAnsiCtrl(newGeminiMessageBuffer),
+          text: newGeminiMessageBuffer,
         }));
       } else {
         // This indicates that we need to split up this Gemini Message.
@@ -465,11 +466,11 @@ export const useGeminiStream = (
             type: pendingHistoryItemRef.current?.type as
               | 'gemini'
               | 'gemini_content',
-            text: sanitizeAnsiCtrl(beforeText),
+            text: beforeText,
           },
           userMessageTimestamp,
         );
-        setPendingHistoryItem({ type: 'gemini_content', text: sanitizeAnsiCtrl(afterText) });
+        setPendingHistoryItem({ type: 'gemini_content', text: afterText });
         newGeminiMessageBuffer = afterText;
       }
       return newGeminiMessageBuffer;

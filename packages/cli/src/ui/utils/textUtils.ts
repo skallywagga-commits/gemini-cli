@@ -5,8 +5,11 @@
  */
 
 import stripAnsi from 'strip-ansi';
+import ansiRegex from 'ansi-regex';
 import { stripVTControlCharacters } from 'node:util';
 import stringWidth from 'string-width';
+
+import type { ToolCallConfirmationDetails } from '@google/gemini-cli-core';
 
 /**
  * Calculates the maximum width of a multi-line ASCII art string.
@@ -146,3 +149,37 @@ export const getCachedStringWidth = (str: string): number => {
 export const clearStringWidthCache = (): void => {
   stringWidthCache.clear();
 };
+
+const regex = ansiRegex();
+
+/**
+ * Replaces ANSI escape codes in a string with a visible, non-functional
+ * representation.
+ * @param s The string to sanitize.
+ * @returns The sanitized string.
+ */
+export function sanitizeAnsiCtrl(s: string): string {
+  return s.replace(regex, (match) => JSON.stringify(match).slice(1, -1));
+}
+
+/**
+ * Sanitizes command properties within a ToolCallConfirmationDetails object.
+ * @param details The details object.
+ * @returns The sanitized details object.
+ */
+export function sanitizeConfirmationDetails(
+  details: ToolCallConfirmationDetails,
+): ToolCallConfirmationDetails {
+  if (details.type === 'exec') {
+    const newDetails = { ...details };
+    if (newDetails.command) {
+      newDetails.command = sanitizeAnsiCtrl(newDetails.command);
+    }
+    if (newDetails.rootCommand) {
+      newDetails.rootCommand = sanitizeAnsiCtrl(newDetails.rootCommand);
+    }
+    return newDetails;
+  }
+
+  return details;
+}
