@@ -1407,7 +1407,7 @@ describe('enableExtension', () => {
     expect(activeExtensions[0].name).toBe('ext1');
   });
 
-  it('should log enable event', () => {
+  it('should log enable event', async () => {
     createExtension({
       extensionsDir: userExtensionsDir,
       name: 'ext1',
@@ -1417,7 +1417,7 @@ describe('enableExtension', () => {
     const activeExtensions = getActiveExtensions();
     expect(activeExtensions).toHaveLength(0);
 
-    enableExtension('ext1', [SettingScope.Workspace]);
+    await enableExtension('ext1', [SettingScope.Workspace]);
 
     expect(logExtensionEnable).toHaveBeenCalledWith(
       expect.any(Object), // Config object
