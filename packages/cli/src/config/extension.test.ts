@@ -22,7 +22,6 @@ import {
   uninstallExtension,
   updateExtension,
   type Extension,
-  type ExtensionInstallMetadata,
 } from './extension.js';
 import {
   GEMINI_DIR,
@@ -31,6 +30,7 @@ import {
   ClearcutLogger,
   type Config,
   ExtensionUninstallEvent,
+  type ExtensionInstallMetadata,
 } from '@google/gemini-cli-core';
 import { execSync } from 'node:child_process';
 import { SettingScope } from './settings.js';

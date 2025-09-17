@@ -7,6 +7,7 @@
 import type {
   MCPServerConfig,
   GeminiCLIExtension,
+  ExtensionInstallMetadata,
 } from '@google/gemini-cli-core';
 import {
   GEMINI_DIR,
@@ -52,12 +53,6 @@ export interface ExtensionConfig {
   mcpServers?: Record<string, MCPServerConfig>;
   contextFileName?: string | string[];
   excludeTools?: string[];
-}
-
-export interface ExtensionInstallMetadata {
-  source: string;
-  type: 'git' | 'local' | 'link' | 'github-release';
-  ref?: string;
 }
 
 export interface ExtensionUpdateInfo {
@@ -305,7 +300,6 @@ export function annotateActiveExtensions(
   const manager = new ExtensionEnablementManager(
     ExtensionStorage.getUserExtensionsDir(),
   );
-
   const annotatedExtensions: GeminiCLIExtension[] = [];
   if (enabledExtensionNames.length === 0) {
     return extensions.map((extension) => ({
@@ -313,6 +307,7 @@ export function annotateActiveExtensions(
       version: extension.config.version,
       isActive: manager.isEnabled(extension.config.name, workspaceDir),
       path: extension.path,
+      installMetadata: loadInstallMetadata(extension.path),
     }));
   }
 
@@ -329,6 +324,7 @@ export function annotateActiveExtensions(
       version: extension.config.version,
       isActive: false,
       path: extension.path,
+      installMetadata: loadInstallMetadata(extension.path),
     }));
   }
 
@@ -347,6 +343,7 @@ export function annotateActiveExtensions(
       version: extension.config.version,
       isActive,
       path: extension.path,
+      installMetadata: loadInstallMetadata(extension.path),
     });
   }
 
@@ -773,14 +770,13 @@ export async function checkForAllExtensionUpdates(
 ): Promise<Map<string, ExtensionUpdateState>> {
   const finalState = new Map<string, ExtensionUpdateState>();
   for (const extension of extensions) {
-    const installMetadata = loadInstallMetadata(extension.path);
-    if (!installMetadata) {
+    if (!extension.installMetadata) {
       finalState.set(extension.name, ExtensionUpdateState.NOT_UPDATABLE);
       continue;
     }
     finalState.set(
       extension.name,
-      await checkForExtensionUpdate(installMetadata),
+      await checkForExtensionUpdate(extension.installMetadata),
     );
   }
   setExtensionsUpdateState(finalState);

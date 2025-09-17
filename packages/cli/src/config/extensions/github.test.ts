@@ -12,8 +12,8 @@ import {
 } from './github.js';
 import { simpleGit, type SimpleGit } from 'simple-git';
 import { ExtensionUpdateState } from '../../ui/state/extensions.js';
-import type { ExtensionInstallMetadata } from '../extension.js';
 import type * as os from 'node:os';
+import type { ExtensionInstallMetadata } from '@google/gemini-cli-core';
 
 const mockPlatform = vi.hoisted(() => vi.fn());
 const mockArch = vi.hoisted(() => vi.fn());
