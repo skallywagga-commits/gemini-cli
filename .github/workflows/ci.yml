@@ -238,8 +238,7 @@ jobs:
           fetch-depth: 0 # Full history is needed to diff against base branch
       - name: 'Warn on specific keywords in changed code'
         run: |
-          IGNORE_COMMENT='lint-keyword-ignore'
-          git diff --unified=0 "origin/${{ github.base_ref }}"..HEAD | awk -v IGNORE_COMMENT="$IGNORE_COMMENT" '
+          git diff --unified=0 "origin/${{ github.base_ref }}"..HEAD | awk '
             /^\+\+\+ b\/(.*)/ {
               current_file = substr($2, 3)
             }
@@ -251,8 +250,8 @@ jobs:
             }
             /^\+/ {
               current_line++
-              if ($0 ~ /gemini-/ && $0 !~ IGNORE_COMMENT) {
-                print "::warning file=" current_file ",line=" current_line "::Found `gemini-` keyword. To suppress this, add a comment including `" IGNORE_COMMENT "` to the line."
+              if ($0 ~ /gemini-/) {
+                print "::warning file=" current_file ",line=" current_line "::Found `gemini-` keyword."
               }
             }
           '
