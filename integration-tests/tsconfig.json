@@ -4,6 +4,12 @@
     "noEmit": true,
     "allowJs": true
   },
-  "include": ["**/*.ts"],
-  "references": [{ "path": "../packages/core" }]
+  "include": [
+    "**/*.ts"
+  ],
+  "references": [
+    {
+      "path": "../packages/core"
+    }
+  ]
 }

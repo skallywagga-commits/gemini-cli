@@ -52,7 +52,7 @@ All telemetry behavior is controlled through your `.gemini/settings.json` file
 and can be overridden with CLI flags:
 
 | Setting        | Values            | Default                 | CLI Override                                             | Description                                          |
-| -------------- | ----------------- | ----------------------- | -------------------------------------------------------- | ---------------------------------------------------- |
+|----------------|-------------------|-------------------------|----------------------------------------------------------|------------------------------------------------------|
 | `enabled`      | `true`/`false`    | `false`                 | `--telemetry` / `--no-telemetry`                         | Enable or disable telemetry                          |
 | `target`       | `"gcp"`/`"local"` | `"local"`               | `--telemetry-target <local\|gcp>`                        | Where to send telemetry data                         |
 | `otlpEndpoint` | URL string        | `http://localhost:4317` | `--telemetry-otlp-endpoint <URL>`                        | OTLP collector endpoint                              |
@@ -71,28 +71,28 @@ For detailed information about all configuration options, see the
 Before using either method below, complete these steps:
 
 1. Set your Google Cloud project ID:
-   - For telemetry in a separate project from inference:
-     ```bash
-     export OTLP_GOOGLE_CLOUD_PROJECT="your-telemetry-project-id"
-     ```
-   - For telemetry in the same project as inference:
-     ```bash
-     export GOOGLE_CLOUD_PROJECT="your-project-id"
-     ```
+  - For telemetry in a separate project from inference:
+    ```bash
+    export OTLP_GOOGLE_CLOUD_PROJECT="your-telemetry-project-id"
+    ```
+  - For telemetry in the same project as inference:
+    ```bash
+    export GOOGLE_CLOUD_PROJECT="your-project-id"
+    ```
 
 2. Authenticate with Google Cloud:
-   - If using a user account:
-     ```bash
-     gcloud auth application-default login
-     ```
-   - If using a service account:
-     ```bash
-     export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/service-account.json"
-     ```
+  - If using a user account:
+    ```bash
+    gcloud auth application-default login
+    ```
+  - If using a service account:
+    ```bash
+    export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/service-account.json"
+    ```
 3. Make sure your account or service account has these IAM roles:
-   - Cloud Trace Agent
-   - Monitoring Metric Writer
-   - Logs Writer
+  - Cloud Trace Agent
+  - Monitoring Metric Writer
+  - Logs Writer
 
 4. Enable the required Google Cloud APIs (if not already enabled):
    ```bash
@@ -118,10 +118,10 @@ Sends telemetry directly to Google Cloud services. No collector needed.
    ```
 2. Run Gemini CLI and send prompts.
 3. View logs and metrics:
-   - Open the Google Cloud Console in your browser after sending prompts:
-     - Logs: https://console.cloud.google.com/logs/
-     - Metrics: https://console.cloud.google.com/monitoring/metrics-explorer
-     - Traces: https://console.cloud.google.com/traces/list
+  - Open the Google Cloud Console in your browser after sending prompts:
+    - Logs: https://console.cloud.google.com/logs/
+    - Metrics: https://console.cloud.google.com/monitoring/metrics-explorer
+    - Traces: https://console.cloud.google.com/traces/list
 
 ### Collector-Based Export (Advanced)
 
@@ -143,19 +143,19 @@ forward data to Google Cloud.
    npm run telemetry -- --target=gcp
    ```
    This will:
-   - Start a local OTEL collector that forwards to Google Cloud
-   - Configure your workspace
-   - Provide links to view traces, metrics, and logs in Google Cloud Console
-   - Save collector logs to `~/.gemini/tmp/<projectHash>/otel/collector-gcp.log`
-   - Stop collector on exit (e.g. `Ctrl+C`)
+  - Start a local OTEL collector that forwards to Google Cloud
+  - Configure your workspace
+  - Provide links to view traces, metrics, and logs in Google Cloud Console
+  - Save collector logs to `~/.gemini/tmp/<projectHash>/otel/collector-gcp.log`
+  - Stop collector on exit (e.g. `Ctrl+C`)
 3. Run Gemini CLI and send prompts.
 4. View logs and metrics:
-   - Open the Google Cloud Console in your browser after sending prompts:
-     - Logs: https://console.cloud.google.com/logs/
-     - Metrics: https://console.cloud.google.com/monitoring/metrics-explorer
-     - Traces: https://console.cloud.google.com/traces/list
-   - Open `~/.gemini/tmp/<projectHash>/otel/collector-gcp.log` to view local
-     collector logs.
+  - Open the Google Cloud Console in your browser after sending prompts:
+    - Logs: https://console.cloud.google.com/logs/
+    - Metrics: https://console.cloud.google.com/monitoring/metrics-explorer
+    - Traces: https://console.cloud.google.com/traces/list
+  - Open `~/.gemini/tmp/<projectHash>/otel/collector-gcp.log` to view local
+    collector logs.
 
 ## Local Telemetry
 
@@ -184,11 +184,11 @@ For local development and debugging, you can capture telemetry data locally:
    npm run telemetry -- --target=local
    ```
    This will:
-   - Download and start Jaeger and OTEL collector
-   - Configure your workspace for local telemetry
-   - Provide a Jaeger UI at http://localhost:16686
-   - Save logs/metrics to `~/.gemini/tmp/<projectHash>/otel/collector.log`
-   - Stop collector on exit (e.g. `Ctrl+C`)
+  - Download and start Jaeger and OTEL collector
+  - Configure your workspace for local telemetry
+  - Provide a Jaeger UI at http://localhost:16686
+  - Save logs/metrics to `~/.gemini/tmp/<projectHash>/otel/collector.log`
+  - Stop collector on exit (e.g. `Ctrl+C`)
 2. Run Gemini CLI and send prompts.
 3. View traces at http://localhost:16686 and logs/metrics in the collector log
    file.
@@ -251,13 +251,15 @@ for Gemini CLI:
     - `mimetype` (string, if applicable)
     - `extension` (string, if applicable)
     - `programming_language` (string, if applicable)
-    - `diff_stat` (json string, if applicable): A JSON string with the following members:
+    - `diff_stat` (json string, if applicable): A JSON string with the following
+      members:
       - `ai_added_lines` (int)
       - `ai_removed_lines` (int)
       - `user_added_lines` (int)
       - `user_removed_lines` (int)
 
-- `gemini_cli.api_request`: This event occurs when making a request to Gemini API.
+- `gemini_cli.api_request`: This event occurs when making a request to Gemini
+  API.
   - **Attributes**:
     - `model`
     - `request_text` (if applicable)
@@ -271,7 +273,8 @@ for Gemini CLI:
     - `duration_ms`
     - `auth_type`
 
-- `gemini_cli.api_response`: This event occurs upon receiving a response from Gemini API.
+- `gemini_cli.api_response`: This event occurs upon receiving a response from
+  Gemini API.
   - **Attributes**:
     - `model`
     - `status_code`
@@ -285,7 +288,8 @@ for Gemini CLI:
     - `response_text` (if applicable)
     - `auth_type`
 
-- `gemini_cli.tool_output_truncated`: This event occurs when the output of a tool call is too large and gets truncated.
+- `gemini_cli.tool_output_truncated`: This event occurs when the output of a
+  tool call is too large and gets truncated.
   - **Attributes**:
     - `tool_name` (string)
     - `original_content_length` (int)
@@ -294,22 +298,26 @@ for Gemini CLI:
     - `lines` (int)
     - `prompt_id` (string)
 
-- `gemini_cli.malformed_json_response`: This event occurs when a `generateJson` response from Gemini API cannot be parsed as a json.
+- `gemini_cli.malformed_json_response`: This event occurs when a `generateJson`
+  response from Gemini API cannot be parsed as a json.
   - **Attributes**:
     - `model`
 
-- `gemini_cli.flash_fallback`: This event occurs when Gemini CLI switches to flash as fallback.
+- `gemini_cli.flash_fallback`: This event occurs when Gemini CLI switches to
+  flash as fallback.
   - **Attributes**:
     - `auth_type`
 
-- `gemini_cli.slash_command`: This event occurs when a user executes a slash command.
+- `gemini_cli.slash_command`: This event occurs when a user executes a slash
+  command.
   - **Attributes**:
     - `command` (string)
     - `subcommand` (string, if applicable)
 
 ### Metrics
 
-Metrics are numerical measurements of behavior over time. The following metrics are collected for Gemini CLI:
+Metrics are numerical measurements of behavior over time. The following metrics
+are collected for Gemini CLI:
 
 - `gemini_cli.session.count` (Counter, Int): Incremented once per CLI startup.
 
@@ -331,7 +339,8 @@ Metrics are numerical measurements of behavior over time. The following metrics 
     - `status_code`
     - `error_type` (if applicable)
 
-- `gemini_cli.api.request.latency` (Histogram, ms): Measures API request latency.
+- `gemini_cli.api.request.latency` (Histogram, ms): Measures API request
+  latency.
   - **Attributes**:
     - `model`
 
@@ -342,17 +351,24 @@ Metrics are numerical measurements of behavior over time. The following metrics 
 
 - `gemini_cli.file.operation.count` (Counter, Int): Counts file operations.
   - **Attributes**:
-    - `operation` (string: "create", "read", "update"): The type of file operation.
+    - `operation` (string: "create", "read", "update"): The type of file
+      operation.
     - `lines` (Int, if applicable): Number of lines in the file.
     - `mimetype` (string, if applicable): Mimetype of the file.
     - `extension` (string, if applicable): File extension of the file.
-    - `model_added_lines` (Int, if applicable): Number of lines added/changed by the model.
-    - `model_removed_lines` (Int, if applicable): Number of lines removed/changed by the model.
-    - `user_added_lines` (Int, if applicable): Number of lines added/changed by user in AI proposed changes.
-    - `user_removed_lines` (Int, if applicable): Number of lines removed/changed by user in AI proposed changes.
-    - `programming_language` (string, if applicable): The programming language of the file.
+    - `model_added_lines` (Int, if applicable): Number of lines added/changed by
+      the model.
+    - `model_removed_lines` (Int, if applicable): Number of lines
+      removed/changed by the model.
+    - `user_added_lines` (Int, if applicable): Number of lines added/changed by
+      user in AI proposed changes.
+    - `user_removed_lines` (Int, if applicable): Number of lines removed/changed
+      by user in AI proposed changes.
+    - `programming_language` (string, if applicable): The programming language
+      of the file.
 
-- `gemini_cli.chat_compression` (Counter, Int): Counts chat compression operations
+- `gemini_cli.chat_compression` (Counter, Int): Counts chat compression
+  operations
   - **Attributes**:
     - `tokens_before`: (Int): Number of tokens in context prior to compression
     - `tokens_after`: (Int): Number of tokens in context after compression

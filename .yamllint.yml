@@ -60,9 +60,9 @@ rules:
     indent-sequences: true
     check-multi-line-strings: false
 
-  key-duplicates: {}
+  key-duplicates: { }
 
-  new-line-at-end-of-file: {}
+  new-line-at-end-of-file: { }
 
   new-lines:
     type: 'unix'
@@ -76,10 +76,10 @@ rules:
     required: true
     allow-quoted-quotes: true
 
-  trailing-spaces: {}
+  trailing-spaces: { }
 
   truthy:
-    allowed-values: ['true', 'false', 'on'] # GitHub Actions uses "on"
+    allowed-values: [ 'true', 'false', 'on' ] # GitHub Actions uses "on"
     check-keys: true
 
 ignore:

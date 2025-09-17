@@ -149,7 +149,7 @@ jobs:
 
   publish-preview:
     name: 'Publish preview'
-    needs: ['calculate-versions', 'test']
+    needs: [ 'calculate-versions', 'test' ]
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'write'
@@ -205,7 +205,7 @@ jobs:
 
   publish-stable:
     name: 'Publish stable'
-    needs: ['calculate-versions', 'test', 'publish-preview']
+    needs: [ 'calculate-versions', 'test', 'publish-preview' ]
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'write'
@@ -261,7 +261,7 @@ jobs:
 
   nightly-pr:
     name: 'Create Nightly PR'
-    needs: ['publish-stable', 'calculate-versions']
+    needs: [ 'publish-stable', 'calculate-versions' ]
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'write'

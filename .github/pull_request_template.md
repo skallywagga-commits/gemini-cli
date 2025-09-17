@@ -14,13 +14,13 @@
 
 <!-- Before submitting please validate your changes on as many of these options as possible -->
 
-|          | 🍏  | 🪟  | 🐧  |
-| -------- | --- | --- | --- |
+|          | 🍏 | 🪟 | 🐧 |
+|----------|----|----|----|
 | npm run  | ❓  | ❓  | ❓  |
 | npx      | ❓  | ❓  | ❓  |
 | Docker   | ❓  | ❓  | ❓  |
-| Podman   | ❓  | -   | -   |
-| Seatbelt | ❓  | -   | -   |
+| Podman   | ❓  | -  | -  |
+| Seatbelt | ❓  | -  | -  |
 
 ## Linked issues / bugs
 

@@ -234,7 +234,7 @@ gemini -p "List programming languages" | grep -i "python"
 Key command-line options for headless usage:
 
 | Option                  | Description                        | Example                                            |
-| ----------------------- | ---------------------------------- | -------------------------------------------------- |
+|-------------------------|------------------------------------|----------------------------------------------------|
 | `--prompt`, `-p`        | Run in headless mode               | `gemini -p "query"`                                |
 | `--output-format`       | Specify output format (text, json) | `gemini -p "query" --output-format json`           |
 | `--model`, `-m`         | Specify the Gemini model           | `gemini -p "query" -m gemini-2.5-flash`            |
@@ -244,7 +244,8 @@ Key command-line options for headless usage:
 | `--yolo`, `-y`          | Auto-approve all actions           | `gemini -p "query" --yolo`                         |
 | `--approval-mode`       | Set approval mode                  | `gemini -p "query" --approval-mode auto_edit`      |
 
-For complete details on all available configuration options, settings files, and environment variables, see the [Configuration Guide](./configuration.md).
+For complete details on all available configuration options, settings files, and
+environment variables, see the [Configuration Guide](./configuration.md).
 
 ## Examples
 

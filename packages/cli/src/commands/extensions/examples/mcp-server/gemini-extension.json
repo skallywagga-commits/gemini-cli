@@ -4,7 +4,9 @@
   "mcpServers": {
     "nodeServer": {
       "command": "node",
-      "args": ["${extensionPath}${/}example.ts"]
+      "args": [
+        "${extensionPath}${/}example.ts"
+      ]
     }
   }
 }

@@ -5,7 +5,7 @@ This document lists the available keyboard shortcuts in the Gemini CLI.
 ## General
 
 | Shortcut | Description                                                                                                           |
-| -------- | --------------------------------------------------------------------------------------------------------------------- |
+|----------|-----------------------------------------------------------------------------------------------------------------------|
 | `Esc`    | Close dialogs and suggestions.                                                                                        |
 | `Ctrl+C` | Cancel the ongoing request and clear the input. Press twice to exit the application.                                  |
 | `Ctrl+D` | Exit the application if the input is empty. Press twice to confirm.                                                   |
@@ -18,7 +18,7 @@ This document lists the available keyboard shortcuts in the Gemini CLI.
 ## Input Prompt
 
 | Shortcut                                           | Description                                                                                                                         |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+|----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | `!`                                                | Toggle shell mode when the input is empty.                                                                                          |
 | `\` (at end of line) + `Enter`                     | Insert a newline.                                                                                                                   |
 | `Down Arrow`                                       | Navigate down through the input history.                                                                                            |
@@ -47,7 +47,7 @@ This document lists the available keyboard shortcuts in the Gemini CLI.
 ## Suggestions
 
 | Shortcut        | Description                            |
-| --------------- | -------------------------------------- |
+|-----------------|----------------------------------------|
 | `Down Arrow`    | Navigate down through the suggestions. |
 | `Tab` / `Enter` | Accept the selected suggestion.        |
 | `Up Arrow`      | Navigate up through the suggestions.   |
@@ -55,7 +55,7 @@ This document lists the available keyboard shortcuts in the Gemini CLI.
 ## Radio Button Select
 
 | Shortcut           | Description                                                                                                   |
-| ------------------ | ------------------------------------------------------------------------------------------------------------- |
+|--------------------|---------------------------------------------------------------------------------------------------------------|
 | `Down Arrow` / `j` | Move selection down.                                                                                          |
 | `Enter`            | Confirm selection.                                                                                            |
 | `Up Arrow` / `k`   | Move selection up.                                                                                            |
@@ -65,5 +65,5 @@ This document lists the available keyboard shortcuts in the Gemini CLI.
 ## IDE Integration
 
 | Shortcut | Description                       |
-| -------- | --------------------------------- |
+|----------|-----------------------------------|
 | `Ctrl+G` | See context CLI received from IDE |
