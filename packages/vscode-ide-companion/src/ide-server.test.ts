@@ -13,6 +13,10 @@ import * as path from 'node:path';
 import { IDEServer } from './ide-server.js';
 import type { DiffManager } from './diff-manager.js';
 
+vi.mock('node:crypto', () => ({
+  randomUUID: vi.fn(() => 'test-auth-token'),
+}));
+
 const mocks = vi.hoisted(() => ({
   diffManager: {
     onDidChange: vi.fn(() => ({ dispose: vi.fn() })),
@@ -22,6 +26,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('node:fs/promises', () => ({
   writeFile: vi.fn(() => Promise.resolve(undefined)),
   unlink: vi.fn(() => Promise.resolve(undefined)),
+  chmod: vi.fn(() => Promise.resolve(undefined)),
 }));
 
 vi.mock('node:os', async (importOriginal) => {
@@ -135,6 +140,7 @@ describe('IDEServer', () => {
       port: parseInt(port, 10),
       workspacePath: expectedWorkspacePaths,
       ppid: process.ppid,
+      authToken: 'test-auth-token',
     });
     expect(fs.writeFile).toHaveBeenCalledWith(
       expectedPortFile,
@@ -144,6 +150,8 @@ describe('IDEServer', () => {
       expectedPpidPortFile,
       expectedContent,
     );
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPortFile, 0o600);
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPpidPortFile, 0o600);
   });
 
   it('should set a single folder path', async () => {
@@ -170,6 +178,7 @@ describe('IDEServer', () => {
       port: parseInt(port, 10),
       workspacePath: '/foo/bar',
       ppid: process.ppid,
+      authToken: 'test-auth-token',
     });
     expect(fs.writeFile).toHaveBeenCalledWith(
       expectedPortFile,
@@ -179,6 +188,8 @@ describe('IDEServer', () => {
       expectedPpidPortFile,
       expectedContent,
     );
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPortFile, 0o600);
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPpidPortFile, 0o600);
   });
 
   it('should set an empty string if no folders are open', async () => {
@@ -205,6 +216,7 @@ describe('IDEServer', () => {
       port: parseInt(port, 10),
       workspacePath: '',
       ppid: process.ppid,
+      authToken: 'test-auth-token',
     });
     expect(fs.writeFile).toHaveBeenCalledWith(
       expectedPortFile,
@@ -214,6 +226,8 @@ describe('IDEServer', () => {
       expectedPpidPortFile,
       expectedContent,
     );
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPortFile, 0o600);
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPpidPortFile, 0o600);
   });
 
   it('should update the path when workspace folders change', async () => {
@@ -254,6 +268,7 @@ describe('IDEServer', () => {
       port: parseInt(port, 10),
       workspacePath: expectedWorkspacePaths,
       ppid: process.ppid,
+      authToken: 'test-auth-token',
     });
     expect(fs.writeFile).toHaveBeenCalledWith(
       expectedPortFile,
@@ -263,6 +278,8 @@ describe('IDEServer', () => {
       expectedPpidPortFile,
       expectedContent,
     );
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPortFile, 0o600);
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPpidPortFile, 0o600);
 
     // Simulate removing a folder
     vscodeMock.workspace.workspaceFolders = [{ uri: { fsPath: '/baz/qux' } }];
@@ -276,6 +293,7 @@ describe('IDEServer', () => {
       port: parseInt(port, 10),
       workspacePath: '/baz/qux',
       ppid: process.ppid,
+      authToken: 'test-auth-token',
     });
     expect(fs.writeFile).toHaveBeenCalledWith(
       expectedPortFile,
@@ -285,6 +303,8 @@ describe('IDEServer', () => {
       expectedPpidPortFile,
       expectedContent2,
     );
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPortFile, 0o600);
+    expect(fs.chmod).toHaveBeenCalledWith(expectedPpidPortFile, 0o600);
   });
 
   it('should clear env vars and delete port file on stop', async () => {
@@ -336,6 +356,7 @@ describe('IDEServer', () => {
         port: parseInt(port, 10),
         workspacePath: expectedWorkspacePaths,
         ppid: process.ppid,
+        authToken: 'test-auth-token',
       });
       expect(fs.writeFile).toHaveBeenCalledWith(
         expectedPortFile,
@@ -345,8 +366,96 @@ describe('IDEServer', () => {
         expectedPpidPortFile,
         expectedContent,
       );
+      expect(fs.chmod).toHaveBeenCalledWith(expectedPortFile, 0o600);
+      expect(fs.chmod).toHaveBeenCalledWith(expectedPpidPortFile, 0o600);
     },
   );
+
+  describe('auth token', () => {
+    let port: number;
+
+    beforeEach(async () => {
+      await ideServer.start(mockContext);
+      port = (ideServer as unknown as { port: number }).port;
+    });
+
+    it('should allow request without auth token for backwards compatibility', async () => {
+      const response = await fetch(`http://localhost:${port}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'initialize',
+          params: {},
+          id: 1,
+        }),
+      });
+      expect(response.status).not.toBe(401);
+    });
+
+    it('should allow request with valid auth token', async () => {
+      const response = await fetch(`http://localhost:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer test-auth-token`,
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'initialize',
+          params: {},
+          id: 1,
+        }),
+      });
+      expect(response.status).not.toBe(401);
+    });
+
+    it('should reject request with invalid auth token', async () => {
+      const response = await fetch(`http://localhost:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer invalid-token',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'initialize',
+          params: {},
+          id: 1,
+        }),
+      });
+      expect(response.status).toBe(401);
+      const body = await response.text();
+      expect(body).toBe('Unauthorized');
+    });
+
+    it('should reject request with malformed auth token', async () => {
+      const malformedHeaders = [
+        'Bearer',
+        'invalid-token',
+        'Bearer token extra',
+      ];
+
+      for (const header of malformedHeaders) {
+        const response = await fetch(`http://localhost:${port}/mcp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: header,
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'initialize',
+            params: {},
+            id: 1,
+          }),
+        });
+        expect(response.status, `Failed for header: ${header}`).toBe(401);
+        const body = await response.text();
+        expect(body, `Failed for header: ${header}`).toBe('Unauthorized');
+      }
+    });
+  });
 });
 
 describe('IDEServer HTTP endpoints', () => {

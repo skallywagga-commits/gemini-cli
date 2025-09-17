@@ -39,13 +39,23 @@ const MCP_SESSION_ID_HEADER = 'mcp-session-id';
 const IDE_SERVER_PORT_ENV_VAR = 'GEMINI_CLI_IDE_SERVER_PORT';
 const IDE_WORKSPACE_PATH_ENV_VAR = 'GEMINI_CLI_IDE_WORKSPACE_PATH';
 
-async function writePortAndWorkspace(
-  context: vscode.ExtensionContext,
-  port: number,
-  portFile: string,
-  ppidPortFile: string,
-  log: (message: string) => void,
-): Promise<void> {
+interface WritePortAndWorkspaceArgs {
+  context: vscode.ExtensionContext;
+  port: number;
+  portFile: string;
+  ppidPortFile: string;
+  authToken: string;
+  log: (message: string) => void;
+}
+
+async function writePortAndWorkspace({
+  context,
+  port,
+  portFile,
+  ppidPortFile,
+  authToken,
+  log,
+}: WritePortAndWorkspaceArgs): Promise<void> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   const workspacePath =
     workspaceFolders && workspaceFolders.length > 0
@@ -61,15 +71,22 @@ async function writePortAndWorkspace(
     workspacePath,
   );
 
-  const content = JSON.stringify({ port, workspacePath, ppid: process.ppid });
+  const content = JSON.stringify({
+    port,
+    workspacePath,
+    ppid: process.ppid,
+    authToken,
+  });
 
   log(`Writing port file to: ${portFile}`);
   log(`Writing ppid port file to: ${ppidPortFile}`);
 
   try {
     await Promise.all([
-      fs.writeFile(portFile, content),
-      fs.writeFile(ppidPortFile, content),
+      fs.writeFile(portFile, content).then(() => fs.chmod(portFile, 0o600)),
+      fs
+        .writeFile(ppidPortFile, content)
+        .then(() => fs.chmod(ppidPortFile, 0o600)),
     ]);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -107,6 +124,7 @@ export class IDEServer {
   private portFile: string | undefined;
   private ppidPortFile: string | undefined;
   private port: number | undefined;
+  private authToken: string | undefined;
   private transports: { [sessionId: string]: StreamableHTTPServerTransport } =
     {};
   private openFilesManager: OpenFilesManager | undefined;
@@ -120,6 +138,7 @@ export class IDEServer {
   start(context: vscode.ExtensionContext): Promise<void> {
     return new Promise((resolve) => {
       this.context = context;
+      this.authToken = randomUUID();
       const sessionsWithInitialNotification = new Set<string>();
 
       const app = express();
@@ -148,6 +167,21 @@ export class IDEServer {
         ];
         if (!allowedHosts.includes(host)) {
           return res.status(403).json({ error: 'Invalid Host header' });
+      app.use((req, res, next) => {
+        const authHeader = req.headers.authorization;
+        if (authHeader) {
+          const parts = authHeader.split(' ');
+          if (parts.length !== 2 || parts[0] !== 'Bearer') {
+            this.log('Malformed Authorization header. Rejecting request.');
+            res.status(401).send('Unauthorized');
+            return;
+          }
+          const token = parts[1];
+          if (token !== this.authToken) {
+            this.log('Invalid auth token provided. Rejecting request.');
+            res.status(401).send('Unauthorized');
+            return;
+          }
         }
         next();
       });
@@ -193,7 +227,7 @@ export class IDEServer {
               );
               clearInterval(keepAlive);
             }
-          }, 60000); // 60 sec
+          }, 30000); // 30 sec
 
           transport.onclose = () => {
             clearInterval(keepAlive);
@@ -298,13 +332,16 @@ export class IDEServer {
           );
           this.log(`IDE server listening on http://127.0.0.1:${this.port}`);
 
-          await writePortAndWorkspace(
-            context,
-            this.port,
-            this.portFile,
-            this.ppidPortFile,
-            this.log,
-          );
+          if (this.authToken) {
+            await writePortAndWorkspace({
+              context,
+              port: this.port,
+              portFile: this.portFile,
+              ppidPortFile: this.ppidPortFile,
+              authToken: this.authToken,
+              log: this.log,
+            });
+          }
         }
         resolve();
       });
@@ -330,15 +367,17 @@ export class IDEServer {
       this.server &&
       this.port &&
       this.portFile &&
-      this.ppidPortFile
+      this.ppidPortFile &&
+      this.authToken
     ) {
-      await writePortAndWorkspace(
-        this.context,
-        this.port,
-        this.portFile,
-        this.ppidPortFile,
-        this.log,
-      );
+      await writePortAndWorkspace({
+        context: this.context,
+        port: this.port,
+        portFile: this.portFile,
+        ppidPortFile: this.ppidPortFile,
+        authToken: this.authToken,
+        log: this.log,
+      });
       this.broadcastIdeContextUpdate();
     }
   }
