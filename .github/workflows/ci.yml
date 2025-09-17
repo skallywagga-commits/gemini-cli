@@ -190,7 +190,7 @@ jobs:
       #   and when a command is used as a conditional.
       - name: 'Run shellcheck'
         run: |-
-          git ls-files | grep -E '^([^.]+|.*\.(sh|zsh|bash))$' | xargs file --mime-type \
+          git ls-files | grep -E '^([^.]+|.*\.(sh|zsh|bash)) | xargs file --mime-type \
             | grep "text/x-shellscript" | awk '{ print substr($1, 1, length($1)-1) }' \
             | xargs shellcheck \
               --check-sourced \
@@ -252,7 +252,7 @@ jobs:
               current_line++
               if (match($0, /gemini-/)) {
                 keyword = substr($0, RSTART, RLENGTH)
-                print "::warning file=" current_file ",line=" current_line "::Found sensitive keyword: " keyword ". Please double check this is appropriate to submit."
+                print "::warning file=" current_file ",line=" current_line "::Found sensitive keyword: '" keyword "'. Please double check this code is appropriate to submit."
               }
             }
           '
