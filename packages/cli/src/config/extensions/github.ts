@@ -91,6 +91,16 @@ function parseGitHubRepo(source: string): { owner: string; repo: string } {
   return { owner, repo };
 }
 
+async function fetchFromGithub(
+  owner: string,
+  repo: string,
+  ref?: string,
+): Promise<{ assets: Asset[]; tag_name: string }> {
+  const endpoint = ref ? `releases/tags/${ref}` : 'releases/latest';
+  const url = `https://api.github.com/repos/${owner}/${repo}/${endpoint}`;
+  return await fetchJson(url);
+}
+
 export async function checkForExtensionUpdate(
   installMetadata: ExtensionInstallMetadata,
 ): Promise<ExtensionUpdateState> {
@@ -147,10 +157,11 @@ export async function checkForExtensionUpdate(
       }
       const { owner, repo } = parseGitHubRepo(source);
 
-      const url = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
-      const releaseData = await fetchJson(url);
-      console.log(releaseData.tag_name);
-      console.log(ref);
+      const releaseData = await fetchFromGithub(
+        owner,
+        repo,
+        installMetadata.ref,
+      );
       if (releaseData.tag_name !== ref) {
         return ExtensionUpdateState.UPDATE_AVAILABLE;
       }
@@ -171,11 +182,8 @@ export async function downloadFromGitHubRelease(
   const { source, ref } = installMetadata;
   const { owner, repo } = parseGitHubRepo(source);
 
-  const endpoint = ref ? `releases/tags/${ref}` : 'releases/latest';
-  const url = `https://api.github.com/repos/${owner}/${repo}/${endpoint}`;
-
   try {
-    const releaseData = await fetchJson(url);
+    const releaseData = await fetchFromGithub(owner, repo, ref);
     if (
       !releaseData ||
       !releaseData.assets ||
@@ -223,7 +231,7 @@ export async function downloadFromGitHubRelease(
     return releaseData.tag_name;
   } catch (error) {
     throw new Error(
-      `Failed to download release from ${url}: ${getErrorMessage(error)}`,
+      `Failed to download release from ${installMetadata.source}: ${getErrorMessage(error)}`,
     );
   }
 }
