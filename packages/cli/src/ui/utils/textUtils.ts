@@ -158,28 +158,39 @@ const regex = ansiRegex();
  * @param s The string to sanitize.
  * @returns The sanitized string.
  */
-export function sanitizeAnsiCtrl(s: string): string {
+export function escapeAnsiCtrl(s: string): string {
   return s.replace(regex, (match) => JSON.stringify(match).slice(1, -1));
 }
 
 /**
- * Sanitizes command properties within a ToolCallConfirmationDetails object.
+ * Escapes all ANSI control chars within a ToolCallConfirmationDetails object.
  * @param details The details object.
  * @returns The sanitized details object.
  */
-export function sanitizeConfirmationDetails(
+export function escapeAnsiCtrlConfirmationDetails(
   details: ToolCallConfirmationDetails,
 ): ToolCallConfirmationDetails {
   if (details.type === 'exec') {
     const newDetails = { ...details };
     if (newDetails.command) {
-      newDetails.command = sanitizeAnsiCtrl(newDetails.command);
+      newDetails.command = escapeAnsiCtrl(newDetails.command);
     }
     if (newDetails.rootCommand) {
-      newDetails.rootCommand = sanitizeAnsiCtrl(newDetails.rootCommand);
+      newDetails.rootCommand = escapeAnsiCtrl(newDetails.rootCommand);
     }
     return newDetails;
+  } else if (details.type === 'info') {
+    const newDetails = { ...details };
+    if (newDetails.prompt) {
+      newDetails.prompt = escapeAnsiCtrl(newDetails.prompt);
+    }
+    if (newDetails.urls) {
+      newDetails.urls.map((url) => escapeAnsiCtrl(url));
+    }
   }
+
+  // TODO add other types
 
   return details;
 }
+

@@ -49,7 +49,7 @@ import { useShellCommandProcessor } from './shellCommandProcessor.js';
 import { handleAtCommand } from './atCommandProcessor.js';
 import { findLastSafeSplitPoint } from '../utils/markdownUtilities.js';
 import { useStateAndRef } from './useStateAndRef.js';
-import { sanitizeAnsiCtrl } from '../utils/textUtils.js';
+import { escapeAnsiCtrl } from '../utils/textUtils.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { useLogger } from './useLogger.js';
 import {
@@ -429,7 +429,7 @@ export const useGeminiStream = (
         // Prevents additional output after a user initiated cancel.
         return '';
       }
-      eventValue = sanitizeAnsiCtrl(eventValue);
+      eventValue = escapeAnsiCtrl(eventValue);
       let newGeminiMessageBuffer = currentGeminiMessageBuffer + eventValue;
       if (
         pendingHistoryItemRef.current?.type !== 'gemini' &&

@@ -1077,7 +1077,7 @@ describe('mapToDisplay', () => {
     });
     const dirtyInvocation = corruptedTool.build({});
     vi.spyOn(dirtyInvocation, 'getDescription').mockReturnValue(
-      'A \u001b[32mcorrupted tool\u001b[0m description'
+      'A \u001b[32mcorrupted tool\u001b[0m description',
     );
 
     const corruptedToolCall: ToolCall = {
@@ -1096,8 +1096,10 @@ describe('mapToDisplay', () => {
 
     expect(toolDisplay.name).toBe('\\u001b[31mCorrupted Tool\\u001b[0m');
     expect(toolDisplay.description).toBe(
-      'A \\u001b[32mcorrupted tool\\u001b[0m description'
+      'A \\u001b[32mcorrupted tool\\u001b[0m description',
     );
-    expect(toolDisplay.resultDisplay).toBe('\\u001b[33mCorrupted Tool Output\\u001b[0m');
+    expect(toolDisplay.resultDisplay).toBe(
+      '\\u001b[33mCorrupted Tool Output\\u001b[0m',
+    );
   });
 });

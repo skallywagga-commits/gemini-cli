@@ -1960,6 +1960,37 @@ describe('useGeminiStream', () => {
       expect(infoMessages).toHaveLength(0);
     });
 
+    it('should escape ANSI codes from streaming content', async () => {
+      // Setup mock to return a stream with ANSI-coded content
+      mockSendMessageStream.mockReturnValue(
+        (async function* () {
+          yield {
+            type: ServerGeminiEventType.Content,
+            value: '\u001b[31mHello\u001b[0m, world!',
+          };
+          yield {
+            type: ServerGeminiEventType.Finished,
+            value: { reason: 'STOP', usageMetadata: undefined },
+          };
+        })(),
+      );
+
+      const { result } = renderTestHook();
+      await act(async () => {
+        await result.current.submitQuery('test query');
+      });
+
+      await waitFor(() => {
+        expect(mockAddItem).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'gemini',
+            text: '\\u001b[31mHello\\u001b[0m, world!',
+          }),
+          expect.any(Number),
+        );
+      });
+    });
+
     it('should add appropriate messages for other finish reasons', async () => {
       const testCases = [
         {

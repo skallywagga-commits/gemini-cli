@@ -28,8 +28,8 @@ import type {
 } from '../types.js';
 import { ToolCallStatus } from '../types.js';
 import {
-  sanitizeAnsiCtrl,
-  sanitizeConfirmationDetails,
+  escapeAnsiCtrl,
+  escapeAnsiCtrlConfirmationDetails,
 } from '../utils/textUtils.js';
 
 export type ScheduleFn = (
@@ -234,14 +234,14 @@ export function mapToDisplay(
         renderOutputAsMarkdown = trackedCall.tool.isOutputMarkdown;
       }
 
-      // Sanitize tool output
-      displayName = displayName ? sanitizeAnsiCtrl(displayName) : displayName;
-      description = description ? sanitizeAnsiCtrl(description) : description;
+      // Escape ANSI in IndividualToolCallDisplay
+      displayName = displayName ? escapeAnsiCtrl(displayName) : displayName;
+      description = description ? escapeAnsiCtrl(description) : description;
       if (
         'response' in trackedCall &&
         typeof trackedCall.response.resultDisplay === 'string'
       ) {
-        trackedCall.response.resultDisplay = sanitizeAnsiCtrl(
+        trackedCall.response.resultDisplay = escapeAnsiCtrl(
           trackedCall.response.resultDisplay,
         );
       }
@@ -249,7 +249,7 @@ export function mapToDisplay(
         'confirmationDetails' in trackedCall &&
         trackedCall.confirmationDetails
       ) {
-        trackedCall.confirmationDetails = sanitizeConfirmationDetails(
+        trackedCall.confirmationDetails = escapeAnsiCtrlConfirmationDetails(
           trackedCall.confirmationDetails,
         );
       }

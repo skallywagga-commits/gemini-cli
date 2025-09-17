@@ -14,8 +14,8 @@ import {
   stripUnsafeCharacters,
   getCachedStringWidth,
   clearStringWidthCache,
-  sanitizeAnsiCtrl,
-  sanitizeConfirmationDetails,
+  escapeAnsiCtrl,
+  escapeAnsiCtrlConfirmationDetails,
 } from './textUtils.js';
 
 describe('textUtils', () => {
@@ -97,24 +97,24 @@ describe('textUtils', () => {
     });
   });
 
-  describe('sanitizeAnsiCtrl', () => {
+  describe('escapeAnsiCtrl', () => {
     it('should replace ANSI escape codes with a visible representation', () => {
       const text = '\u001b[31mHello\u001b[0m';
       const expected = '\\u001b[31mHello\\u001b[0m';
-      expect(sanitizeAnsiCtrl(text)).toBe(expected);
+      expect(escapeAnsiCtrl(text)).toBe(expected);
 
-      const text2 = "sh -e 'good && bad# [9D[K && good"
-      const expected2 = "sh -e 'good && bad# \\u001b[9D\\u001b[K && good"
-      expect(sanitizeAnsiCtrl(text2)).toBe(expected2);
+      const text2 = "sh -e 'good && bad# [9D[K && good";
+      const expected2 = "sh -e 'good && bad# \\u001b[9D\\u001b[K && good";
+      expect(escapeAnsiCtrl(text2)).toBe(expected2);
     });
 
     it('should not change a string with no ANSI codes', () => {
       const text = 'Hello, world!';
-      expect(sanitizeAnsiCtrl(text)).toBe(text);
+      expect(escapeAnsiCtrl(text)).toBe(text);
     });
 
     it('should handle an empty string', () => {
-      expect(sanitizeAnsiCtrl('')).toBe('');
+      expect(escapeAnsiCtrl('')).toBe('');
     });
   });
 
@@ -128,14 +128,14 @@ describe('textUtils', () => {
         onConfirm: async () => {},
       };
 
-      const sanitized = sanitizeConfirmationDetails(details);
+      const sanitized = escapeAnsiCtrlConfirmationDetails(details);
 
       // Type guard to satisfy TypeScript
       if (sanitized.type === 'exec') {
-        expect(sanitized.command).toBe('\\u001b[31 rootCommand mls -l\\u001b[0m');
-        expect(sanitized.rootCommand).toBe(
-          '\\u001b[31 rootCommand',
+        expect(sanitized.command).toBe(
+          '\\u001b[31 rootCommand mls -l\\u001b[0m',
         );
+        expect(sanitized.rootCommand).toBe('\\u001b[31 rootCommand');
       }
     });
   });
