@@ -190,7 +190,7 @@ jobs:
       #   and when a command is used as a conditional.
       - name: 'Run shellcheck'
         run: |-
-          git ls-files | grep -E '^([^.]+|.*\.(sh|zsh|bash))$' | xargs file --mime-type \
+          git ls-files | grep -E '^([^.]+|.*\.(sh|zsh|bash)) | xargs file --mime-type \
             | grep "text/x-shellscript" | awk '{ print substr($1, 1, length($1)-1) }' \
             | xargs shellcheck \
               --check-sourced \
@@ -235,12 +235,27 @@ jobs:
       - name: 'Checkout'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
         with:
-          fetch-depth: 1
-      - name: 'Check for disallowed keywords'
-        run: |-
-          git grep --line-number -I -E 'gemini-(pro|flash|1.5-pro|1.5-flash|2.5-pro|2.5-flash|2.5-flash-lite|embedding-001)' | while IFS=: read -r file line content; do
-            echo "::warning file=${file},line=${line}::Found disallowed keyword in PR: ${content}"
-          done
+          fetch-depth: 0 # Full history is needed to diff against base branch
+      - name: 'Warn on specific keywords in changed code'
+        run: |
+          IGNORE_COMMENT='lint-keyword-ignore'
+          git diff --unified=0 "origin/${{ github.base_ref }}"..HEAD | awk -v IGNORE_COMMENT="$IGNORE_COMMENT" '
+            /^\+\+\+ b\/(.*)/ {
+              current_file = substr($2, 3)
+            }
+            /^@@ -[0-9,]+ \+([0-9,]+) @@/ {
+              line_info = $2
+              split(line_info, parts, ",")
+              current_line = parts[1]
+              current_line--
+            }
+            /^\+/ {
+              current_line++
+              if ($0 ~ /gemini-/ && $0 !~ IGNORE_COMMENT) {
+                print "::warning file=" current_file ",line=" current_line "::Found `gemini-` keyword. To suppress this, add a comment including `" IGNORE_COMMENT "` to the line."
+              }
+            }
+          '
 
   #
   # Lint: All
