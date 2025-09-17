@@ -243,9 +243,9 @@ jobs:
               current_file = substr($2, 3)
             }
             /^@@ -[0-9,]+ \+([0-9,]+) @@/ {
-              line_info = $2
+              line_info = $3
               split(line_info, parts, ",")
-              current_line = parts[1]
+              current_line = substr(parts[1], 2)
               current_line--
             }
             /^\+/ {
