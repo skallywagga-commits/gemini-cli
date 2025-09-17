@@ -6,7 +6,11 @@
 
 import { renderHook } from '@testing-library/react';
 import { vi } from 'vitest';
-import { useMemoryMonitor } from './useMemoryMonitor.js';
+import {
+  useMemoryMonitor,
+  MEMORY_CHECK_INTERVAL,
+  MEMORY_WARNING_THRESHOLD,
+} from './useMemoryMonitor.js';
 import process from 'node:process';
 import { MessageType } from '../types.js';
 
@@ -25,7 +29,7 @@ describe('useMemoryMonitor', () => {
 
   it('should not warn when memory usage is below threshold', () => {
     memoryUsageSpy.mockReturnValue({
-      rss: 5 * 1024 * 1024 * 1024,
+      rss: MEMORY_WARNING_THRESHOLD / 2,
     } as NodeJS.MemoryUsage);
     renderHook(() => useMemoryMonitor({ addItem }));
     vi.advanceTimersByTime(10000);
@@ -34,15 +38,15 @@ describe('useMemoryMonitor', () => {
 
   it('should warn when memory usage is above threshold', () => {
     memoryUsageSpy.mockReturnValue({
-      rss: 8 * 1024 * 1024 * 1024,
+      rss: MEMORY_WARNING_THRESHOLD * 1.5,
     } as NodeJS.MemoryUsage);
     renderHook(() => useMemoryMonitor({ addItem }));
-    vi.advanceTimersByTime(10000);
+    vi.advanceTimersByTime(MEMORY_CHECK_INTERVAL);
     expect(addItem).toHaveBeenCalledTimes(1);
     expect(addItem).toHaveBeenCalledWith(
       {
         type: MessageType.WARNING,
-        text: 'High memory usage detected: 8.00 GB. If you experience a crash, please file a bug report by running `/bug`',
+        text: 'High memory usage detected: 10.50 GB. If you experience a crash, please file a bug report by running `/bug`',
       },
       expect.any(Number),
     );
@@ -50,18 +54,18 @@ describe('useMemoryMonitor', () => {
 
   it('should only warn once', () => {
     memoryUsageSpy.mockReturnValue({
-      rss: 8 * 1024 * 1024 * 1024,
+      rss: MEMORY_WARNING_THRESHOLD * 1.5,
     } as NodeJS.MemoryUsage);
     const { rerender } = renderHook(() => useMemoryMonitor({ addItem }));
-    vi.advanceTimersByTime(5000);
+    vi.advanceTimersByTime(MEMORY_CHECK_INTERVAL);
     expect(addItem).toHaveBeenCalledTimes(1);
 
     // Rerender and advance timers, should not warn again
     memoryUsageSpy.mockReturnValue({
-      rss: 9 * 1024 * 1024 * 1024,
+      rss: MEMORY_WARNING_THRESHOLD * 1.5,
     } as NodeJS.MemoryUsage);
     rerender();
-    vi.advanceTimersByTime(10000);
+    vi.advanceTimersByTime(MEMORY_CHECK_INTERVAL);
     expect(addItem).toHaveBeenCalledTimes(1);
   });
 });

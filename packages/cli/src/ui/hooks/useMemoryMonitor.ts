@@ -8,7 +8,8 @@ import { useEffect } from 'react';
 import process from 'node:process';
 import { type HistoryItemWithoutId, MessageType } from '../types.js';
 
-const MEMORY_WARNING_THRESHOLD = 7 * 1024 * 1024 * 1024; // 7GB in bytes
+export const MEMORY_WARNING_THRESHOLD = 7 * 1024 * 1024 * 1024; // 7GB in bytes
+export const MEMORY_CHECK_INTERVAL = 60 * 1000; // one minute
 
 interface MemoryMonitorOptions {
   addItem: (item: HistoryItemWithoutId, timestamp: number) => void;
@@ -33,7 +34,7 @@ export const useMemoryMonitor = ({ addItem }: MemoryMonitorOptions) => {
         );
         clearInterval(intervalId);
       }
-    }, 5000); // Check every 5 seconds
+    }, MEMORY_CHECK_INTERVAL);
 
     return () => clearInterval(intervalId);
   }, [addItem]);
