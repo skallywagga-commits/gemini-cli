@@ -673,6 +673,7 @@ export function logExtensionEnable(
   config: Config,
   event: ExtensionEnableEvent,
 ): void {
+  ClearcutLogger.getInstance(config)?.logExtensionEnableEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
   const attributes: LogAttributes = {
