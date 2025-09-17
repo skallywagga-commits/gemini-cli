@@ -680,6 +680,7 @@ export function logExtensionEnable(
     ...getCommonAttributes(config),
     ...event,
     'event.name': EVENT_EXTENSIONS_ENABLE,
+    'event.timestamp': new Date().toISOString(),
   };
 
   const logger = logs.getLogger(SERVICE_NAME);

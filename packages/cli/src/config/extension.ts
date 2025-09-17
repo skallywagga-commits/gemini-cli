@@ -734,8 +734,9 @@ export function disableExtension(
 
 export async function enableExtension(name: string, scopes: SettingScope[]) {
   removeFromDisabledExtensions(name, scopes);
+  const clearcutConfig = await getClearcutConfig(process.cwd());
   logExtensionEnable(
-    await getClearcutConfig(process.cwd()),
+    clearcutConfig,
     new ExtensionEnableEvent(name, JSON.stringify(scopes)),
   );
 }
