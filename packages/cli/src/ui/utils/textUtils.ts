@@ -170,27 +170,41 @@ export function escapeAnsiCtrl(s: string): string {
 export function escapeAnsiCtrlConfirmationDetails(
   details: ToolCallConfirmationDetails,
 ): ToolCallConfirmationDetails {
-  if (details.type === 'exec') {
-    const newDetails = { ...details };
-    if (newDetails.command) {
+  switch (details.type) {
+    case 'edit': {
+      const newDetails = { ...details };
+      newDetails.title = escapeAnsiCtrl(newDetails.title);
+      newDetails.fileName = escapeAnsiCtrl(newDetails.fileName);
+      newDetails.filePath = escapeAnsiCtrl(newDetails.filePath);
+      newDetails.fileDiff = escapeAnsiCtrl(newDetails.fileDiff);
+      return newDetails;
+    }
+    case 'mcp': {
+      const newDetails = { ...details };
+      newDetails.title = escapeAnsiCtrl(newDetails.title);
+      newDetails.serverName = escapeAnsiCtrl(newDetails.serverName);
+      newDetails.toolName = escapeAnsiCtrl(newDetails.toolName);
+      newDetails.toolDisplayName = escapeAnsiCtrl(newDetails.toolDisplayName);
+      return newDetails;
+    }
+    case 'exec': {
+      const newDetails = { ...details };
+      newDetails.title = escapeAnsiCtrl(newDetails.title);
       newDetails.command = escapeAnsiCtrl(newDetails.command);
-    }
-    if (newDetails.rootCommand) {
       newDetails.rootCommand = escapeAnsiCtrl(newDetails.rootCommand);
+      return newDetails;
     }
-    return newDetails;
-  } else if (details.type === 'info') {
-    const newDetails = { ...details };
-    if (newDetails.prompt) {
+    case 'info': {
+      const newDetails = { ...details };
+      newDetails.title = escapeAnsiCtrl(newDetails.title);
       newDetails.prompt = escapeAnsiCtrl(newDetails.prompt);
+      if (newDetails.urls) {
+        newDetails.urls = newDetails.urls.map((url) => escapeAnsiCtrl(url));
+      }
+      return newDetails;
     }
-    if (newDetails.urls) {
-      newDetails.urls.map((url) => escapeAnsiCtrl(url));
-    }
+    default:
+      return details;
   }
-
-  // TODO add other types
-
-  return details;
 }
 
