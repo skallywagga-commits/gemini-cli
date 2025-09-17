@@ -167,6 +167,10 @@ export class IDEServer {
         ];
         if (!allowedHosts.includes(host)) {
           return res.status(403).json({ error: 'Invalid Host header' });
+        }
+        next();
+      });
+
       app.use((req, res, next) => {
         const authHeader = req.headers.authorization;
         if (authHeader) {
