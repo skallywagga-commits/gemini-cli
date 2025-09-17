@@ -58,6 +58,11 @@ export const ToolMessage: React.FC<ToolMessageProps> = ({
     ptyId === activeShellPtyId &&
     shellFocused;
 
+  const isThisShellFocusable =
+    (name === SHELL_COMMAND_NAME || name === 'Shell') &&
+    status === ToolCallStatus.Executing &&
+    config?.getShouldUseNodePtyShell();
+
   const availableHeight = availableTerminalHeight
     ? Math.max(
         availableTerminalHeight - STATIC_HEIGHT - RESERVED_LINE_COUNT,
@@ -90,9 +95,15 @@ export const ToolMessage: React.FC<ToolMessageProps> = ({
           description={description}
           emphasis={emphasis}
         />
-        {isThisShellFocused && (
+        {isThisShellFocusable && (
           <Box marginLeft={1}>
-            <Text color={theme.text.accent}>[Focused]</Text>
+            <Text
+              color={
+                isThisShellFocused ? theme.text.accent : theme.text.secondary
+              }
+            >
+              {isThisShellFocused ? '(Focused)' : '(ctrl+f to focus)'}
+            </Text>
           </Box>
         )}
         {emphasis === 'high' && <TrailingIndicator />}
@@ -118,7 +129,7 @@ export const ToolMessage: React.FC<ToolMessageProps> = ({
                 </Box>
               </MaxSizedBox>
             ) : typeof resultDisplay === 'object' &&
-              !Array.isArray(resultDisplay) ? (
+              'fileDiff' in resultDisplay ? (
               <DiffRenderer
                 diffContent={resultDisplay.fileDiff}
                 filename={resultDisplay.fileName}
