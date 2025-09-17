@@ -2,11 +2,6 @@
 
 Gemini CLI extensions can be distributed as pre-built binaries through GitHub Releases. This provides a faster and more reliable installation experience for users, as it avoids the need to clone the repository and build the extension from source.
 
-## Creating a GitHub release
-
-1. Tag your release branch locally using the release version `git tag v0.0.1`
-2. Push your release tag `git push origin v0.0.1`
-
 ## Asset naming convention
 
 To ensure Gemini CLI can automatically find the correct release asset for each platform, you should follow this naming convention. The CLI will search for assets in the following order:
