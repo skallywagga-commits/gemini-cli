@@ -38,7 +38,9 @@ export async function cloneFromGit(
           parsedUrl.protocol === 'https:' &&
           parsedUrl.hostname === 'github.com'
         ) {
-          parsedUrl.username = token;
+          if (!parsedUrl.username) {
+            parsedUrl.username = token;
+          }
           sourceUrl = parsedUrl.toString();
         }
       } catch {
@@ -70,6 +72,23 @@ export async function cloneFromGit(
       },
     );
   }
+}
+
+function parseGitHubRepo(source: string): { owner: string; repo: string } {
+  // The source should be "owner/repo" or a full GitHub URL.
+  const parts = source.split('/');
+  if (!source.includes('://') && parts.length !== 2) {
+    throw new Error(
+      `Invalid GitHub repository source: ${source}. Expected "owner/repo".`,
+    );
+  }
+  const owner = parts.at(-2);
+  const repo = parts.at(-1)?.replace('.git', '');
+
+  if (!owner || !repo) {
+    throw new Error(`Invalid GitHub repository source: ${source}`);
+  }
+  return { owner, repo };
 }
 
 export async function checkForExtensionUpdate(
@@ -116,23 +135,17 @@ export async function checkForExtensionUpdate(
           `Unable to parse hash from git ls-remote output "${lsRemoteOutput}"`,
         );
         return ExtensionUpdateState.ERROR;
-      } else if (remoteHash === localHash) {
-        return ExtensionUpdateState.UP_TO_DATE;
-      } else {
-        return ExtensionUpdateState.UPDATE_AVAILABLE;
       }
+      if (remoteHash === localHash) {
+        return ExtensionUpdateState.UP_TO_DATE;
+      }
+      return ExtensionUpdateState.UPDATE_AVAILABLE;
     } else {
       const { source, ref } = installMetadata;
       if (!source) {
         return ExtensionUpdateState.ERROR;
       }
-      const parts = source.split('/');
-      const owner = parts.at(-2);
-      const repo = parts.at(-1)?.replace('.git', '');
-
-      if (!owner || !repo) {
-        throw new Error(`Invalid GitHub repository source: ${source}`);
-      }
+      const { owner, repo } = parseGitHubRepo(source);
 
       const url = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
       const releaseData = await fetchJson(url);
@@ -156,16 +169,10 @@ export async function downloadFromGitHubRelease(
   destination: string,
 ): Promise<string> {
   const { source, ref } = installMetadata;
-  const parts = source.split('/');
-  const owner = parts.at(-2);
-  const repo = parts.at(-1)?.replace('.git', '');
+  const { owner, repo } = parseGitHubRepo(source);
 
-  if (!owner || !repo) {
-    throw new Error(`Invalid GitHub repository source: ${source}`);
-  }
-
-  const tag = ref || 'latest';
-  const url = `https://api.github.com/repos/${owner}/${repo}/releases/${tag}`;
+  const endpoint = ref ? `releases/tags/${ref}` : 'releases/latest';
+  const url = `https://api.github.com/repos/${owner}/${repo}/${endpoint}`;
 
   try {
     const releaseData = await fetchJson(url);
@@ -175,7 +182,7 @@ export async function downloadFromGitHubRelease(
       releaseData.assets.length === 0
     ) {
       throw new Error(
-        `No release assets found for ${owner}/${repo} at tag ${tag}`,
+        `No release assets found for ${owner}/${repo} at tag ${ref}`,
       );
     }
 
@@ -281,11 +288,12 @@ async function fetchJson(
             new Error(`Request failed with status code ${res.statusCode}`),
           );
         }
-        let data = '';
-        res.on('data', (chunk) => (data += chunk));
-        res.on('end', () =>
-          resolve(JSON.parse(data) as { assets: Asset[]; tag_name: string }),
-        );
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => {
+          const data = Buffer.concat(chunks).toString();
+          resolve(JSON.parse(data) as { assets: Asset[]; tag_name: string });
+        });
       })
       .on('error', reject);
   });
@@ -324,5 +332,7 @@ function extractFile(file: string, dest: string) {
     execSync(`tar -xzf ${file} -C ${dest}`);
   } else if (file.endsWith('.zip')) {
     execSync(`unzip ${file} -d ${dest}`);
+  } else {
+    throw new Error(`Unsupported file extension for extraction: ${file}`);
   }
 }

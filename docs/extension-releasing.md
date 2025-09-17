@@ -4,11 +4,8 @@ Gemini CLI extensions can be distributed as pre-built binaries through GitHub Re
 
 ## Creating a GitHub release
 
-1.  **Navigate to your repository's "Releases" page** on GitHub.
-2.  **Click "Draft a new release".**
-3.  **Choose a tag.** It's recommended to use semantic versioning (e.g., `v1.0.0`).
-4.  **Add a release title and description.**
-5.  **Upload your release assets.** These are the pre-built binaries for your extension.
+1. Tag your release branch locally using the release version `git tag v0.0.1`
+2. Push your release tag `git push origin v0.0.1`
 
 ## Asset naming convention
 
