@@ -1961,7 +1961,6 @@ describe('useGeminiStream', () => {
     });
 
     it('should escape ANSI codes from streaming content', async () => {
-      // Setup mock to return a stream with ANSI-coded content
       mockSendMessageStream.mockReturnValue(
         (async function* () {
           yield {
